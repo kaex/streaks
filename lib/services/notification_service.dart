@@ -53,9 +53,12 @@ class NotificationService {
     );
   }
 
-  // Request permission for iOS
+  // Request permission for notifications
   Future<bool> requestPermissions() async {
-    final bool? result = await flutterLocalNotificationsPlugin
+    debugPrint('Requesting notification permissions...');
+
+    // For iOS
+    final bool? iosResult = await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
@@ -63,7 +66,32 @@ class NotificationService {
           badge: true,
           sound: true,
         );
-    return result ?? false;
+
+    // For Android 13+ (API level 33+)
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    final bool? androidResult =
+        await androidImplementation?.requestNotificationsPermission();
+
+    // Log results
+    debugPrint('iOS permission result: $iosResult');
+    debugPrint('Android permission result: $androidResult');
+
+    // If either platform returns false, permissions were denied
+    if (iosResult == false || androidResult == false) {
+      debugPrint('Notification permissions denied by user');
+      return false;
+    }
+
+    // If we're on Android and couldn't get a result, we're probably on an older
+    // Android version where permissions are granted in the manifest
+    final bool permissionGranted = iosResult ?? androidResult ?? true;
+
+    debugPrint(
+        'Notification permissions ${permissionGranted ? "granted" : "denied"}');
+    return permissionGranted;
   }
 
   // Schedule notifications for a specific habit
@@ -297,5 +325,13 @@ class NotificationService {
     } catch (e) {
       debugPrint('Error showing test notification: $e');
     }
+  }
+
+  // Open the app's notification settings on the device
+  Future<void> openNotificationSettings() async {
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
   }
 }

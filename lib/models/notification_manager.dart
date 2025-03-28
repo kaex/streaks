@@ -48,15 +48,44 @@ class NotificationManager extends ChangeNotifier {
     }
   }
 
-  Future<void> setNotificationsEnabled(bool enabled) async {
+  Future<void> setNotificationsEnabled(
+      bool enabled, BuildContext context) async {
     if (_notificationsEnabled == enabled) return;
 
     // If enabling notifications, request permissions first
     if (enabled) {
       bool permissionGranted = await _notificationService.requestPermissions();
       if (!permissionGranted) {
-        // If permissions were denied, don't enable notifications
+        // If permissions were denied, don't enable notifications and show guidance
         debugPrint('Notification permissions denied');
+
+        // Show a dialog explaining how to enable permissions
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Permission Required'),
+                content: const Text(
+                  'Notifications permission was denied. To enable notifications, please go to your device settings and grant notification permission to the app.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _notificationService.requestPermissions();
+                    },
+                    child: const Text('Try Again'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
         return;
       }
     }

@@ -52,13 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.notifications,
             title: 'Notifications',
             subtitle: 'Manage reminder notifications',
-            trailing: Switch(
-              value: notificationManager.notificationsEnabled,
-              activeColor: AppTheme.accentColor,
-              onChanged: (value) {
-                notificationManager.setNotificationsEnabled(value);
-              },
-            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
             onTap: () {
               Navigator.push(
                 context,

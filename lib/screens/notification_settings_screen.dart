@@ -79,7 +79,8 @@ class NotificationSettingsScreen extends StatelessWidget {
                     value: notificationManager.notificationsEnabled,
                     activeColor: AppTheme.accentColor,
                     onChanged: (value) {
-                      notificationManager.setNotificationsEnabled(value);
+                      notificationManager.setNotificationsEnabled(
+                          value, context);
 
                       if (value) {
                         // Show snackbar with message that notifications have been enabled
@@ -124,15 +125,54 @@ class NotificationSettingsScreen extends StatelessWidget {
                           ElevatedButton.icon(
                             onPressed: () async {
                               final notificationService = NotificationService();
+
+                              // First check if we have permission
+                              bool hasPermission = await notificationService
+                                  .requestPermissions();
+                              if (!hasPermission) {
+                                if (context.mounted) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title:
+                                            const Text('Permission Required'),
+                                        content: const Text(
+                                          'Notifications permission is required. Please go to your device settings to enable notifications for this app.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              notificationService
+                                                  .requestPermissions();
+                                            },
+                                            child: const Text('Try Again'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
+                                return;
+                              }
+
                               await notificationService.showTestNotification();
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Test notification sent! You should receive it in a moment.'),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Test notification sent! You should receive it in a moment.'),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
                             },
                             icon: const Icon(Icons.notifications_active),
                             label: const Text('Send Test Notification'),
