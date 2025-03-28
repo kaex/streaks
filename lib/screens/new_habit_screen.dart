@@ -37,7 +37,6 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
 
   bool _isEditing = false;
   late Habit? _existingHabit;
-  bool _hasUnsavedChanges = false;
 
   @override
   void initState() {
@@ -57,52 +56,9 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
 
-    // Listen for text changes to auto-save
-    _titleController.addListener(_onFieldChanged);
-    _descriptionController.addListener(_onFieldChanged);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
-  }
-
-  void _onFieldChanged() {
-    _autoSaveChanges();
-  }
-
-  // Auto-save changes
-  void _autoSaveChanges() {
-    if (!_isEditing || _existingHabit == null) return;
-
-    // Only continue if form is valid
-    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      final habit = Habit(
-        id: _existingHabit!.id,
-        title: _titleController.text,
-        description: _descriptionController.text,
-        startDate: _startDate,
-        reminderDays: _reminderDays,
-        reminderTime: _reminderTime,
-        interval: _interval,
-        color: _selectedColor,
-        iconName: _selectedIconName,
-        streakGoal: _streakGoal,
-        categories: _selectedCategories.isNotEmpty
-            ? _selectedCategories.toList()
-            : null,
-        completionDates: _existingHabit!.completionDates,
-      );
-
-      final habitsProvider =
-          Provider.of<HabitsProvider>(context, listen: false);
-
-      // Update the habit
-      habitsProvider.updateHabit(habit, context: context);
-
-      debugPrint('Auto-saved changes to habit: ${habit.title}');
-    }
   }
 
   void _initializeData() {
@@ -139,27 +95,9 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
 
   @override
   void dispose() {
-    // Save changes when leaving the screen
-    if (_isEditing) {
-      _saveHabit();
-    }
-
-    // Remove listeners
-    _titleController.removeListener(_onFieldChanged);
-    _descriptionController.removeListener(_onFieldChanged);
-
-    // Dispose controllers
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
-  }
-
-  // Override the back button to save changes
-  Future<bool> _onWillPop() async {
-    if (_isEditing) {
-      _saveHabit();
-    }
-    return true;
   }
 
   @override
@@ -172,292 +110,243 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     final textColor = isDarkMode ? Colors.white : Colors.black;
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[700];
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: scaffoldBgColor,
+      appBar: AppBar(
         backgroundColor: scaffoldBgColor,
-        appBar: AppBar(
-          backgroundColor: scaffoldBgColor,
-          title: Text(
-            _isEditing ? 'Edit Habit' : 'New Habit',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.close, color: textColor),
-            onPressed: () {
-              if (_isEditing) {
-                _saveHabit();
-              }
-              Navigator.pop(context);
-            },
+        title: Text(
+          _isEditing ? 'Edit Habit' : 'New Habit',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: textColor,
           ),
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Form fields
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name field
-                      _buildSectionLabel('Name'),
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          hintText: 'Habit name',
-                          filled: true,
-                          fillColor: inputBgColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.all(16),
-                          hintStyle: TextStyle(color: subtitleColor),
+        leading: IconButton(
+          icon: Icon(Icons.close, color: textColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _saveHabit,
+        backgroundColor: AppTheme.accentColor,
+        icon: const Icon(Icons.save),
+        label: Text(_isEditing ? 'Save Changes' : 'Save'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Form fields
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name field
+                    _buildSectionLabel('Name'),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'Habit name',
+                        filled: true,
+                        fillColor: inputBgColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
                         ),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a title';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _title = value!;
-                        },
+                        contentPadding: const EdgeInsets.all(16),
+                        hintStyle: TextStyle(color: subtitleColor),
                       ),
-                      const SizedBox(height: 24),
-
-                      // Description field
-                      _buildSectionLabel('Description'),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: InputDecoration(
-                          hintText: 'What will you do?',
-                          filled: true,
-                          fillColor: inputBgColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.all(16),
-                          hintStyle: TextStyle(color: subtitleColor),
-                        ),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                        ),
-                        maxLines: 3,
-                        onSaved: (value) {
-                          _description = value ?? '';
-                        },
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: textColor,
                       ),
-                      const SizedBox(height: 24),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a title';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _title = value!;
+                      },
+                    ),
+                    const SizedBox(height: 24),
 
-                      // Streak Goal & Reminder in a row
-                      Row(
-                        children: [
-                          // Streak Goal
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    // Description field
+                    _buildSectionLabel('Description'),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        hintText: 'What will you do?',
+                        filled: true,
+                        fillColor: inputBgColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        hintStyle: TextStyle(color: subtitleColor),
+                      ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                      maxLines: 3,
+                      onSaved: (value) {
+                        _description = value ?? '';
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Streak Goal & Reminder in a row
+                    Row(
+                      children: [
+                        // Streak Goal
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionLabel('Streak Goal'),
+                              _buildSelectionContainer(
+                                _getIntervalText(),
+                                suffixIcon: const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey,
+                                ),
+                                onTap: () {
+                                  _showIntervalSelector();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Reminder
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionLabel('Reminder'),
+                              _buildSelectionContainer(
+                                _getReminderText(),
+                                suffixIcon: const Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey,
+                                ),
+                                onTap: () {
+                                  _showReminderSelector();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Categories
+                    _buildSectionLabel('Categories'),
+                    _buildSelectionContainer(
+                      _categoriesDisplayText,
+                      suffixIcon: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey,
+                      ),
+                      onTap: () {
+                        _showCategoriesBottomSheet(context);
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Completions per day
+                    _buildSectionLabel('Completions Per Day'),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: inputBgColor,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildSectionLabel('Streak Goal'),
-                                _buildSelectionContainer(
-                                  _getIntervalText(),
-                                  suffixIcon: const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.grey,
+                                Text(
+                                  '$_streakGoal / Day',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: textColor,
                                   ),
-                                  onTap: () {
-                                    _showIntervalSelector();
-                                  },
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          // Reminder
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionLabel('Reminder'),
-                                _buildSelectionContainer(
-                                  _getReminderText(),
-                                  suffixIcon: const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.grey,
-                                  ),
-                                  onTap: () {
-                                    _showReminderSelector();
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Categories
-                      _buildSectionLabel('Categories'),
-                      _buildSelectionContainer(
-                        _categoriesDisplayText,
-                        suffixIcon: const Icon(
-                          Icons.chevron_right,
-                          color: Colors.grey,
                         ),
-                        onTap: () {
-                          _showCategoriesBottomSheet(context);
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Completions per day
-                      _buildSectionLabel('Completions Per Day'),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: inputBgColor,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '$_streakGoal / Day',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _buildIconButton(
-                            Icons.remove,
-                            onPressed: () {
-                              if (_streakGoal > 1) {
-                                setState(() {
-                                  _streakGoal--;
-                                  _hasUnsavedChanges = true;
-                                });
-
-                                // Auto-save the change
-                                if (_isEditing) {
-                                  _autoSaveChanges();
-                                }
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          _buildIconButton(
-                            Icons.add,
-                            onPressed: () {
+                        const SizedBox(width: 12),
+                        _buildIconButton(
+                          Icons.remove,
+                          onPressed: () {
+                            if (_streakGoal > 1) {
                               setState(() {
-                                _streakGoal++;
-                                _hasUnsavedChanges = true;
+                                _streakGoal--;
                               });
-
-                              // Auto-save the change
-                              if (_isEditing) {
-                                _autoSaveChanges();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Icon Selection
-                      _buildSectionLabel('Icon'),
-                      Container(
-                        height: 180, // Fixed height for scrollable grid
-                        child: IconPicker(
-                          selectedIconName: _selectedIconName,
-                          onIconSelected: (iconName) {
-                            setState(() {
-                              _selectedIconName = iconName;
-                              _hasUnsavedChanges = true;
-                            });
-
-                            // Auto-save the change
-                            if (_isEditing) {
-                              _autoSaveChanges();
                             }
                           },
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(width: 12),
+                        _buildIconButton(
+                          Icons.add,
+                          onPressed: () {
+                            setState(() {
+                              _streakGoal++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
 
-                      // Color Selection
-                      _buildSectionLabel('Color'),
-                      ColorPicker(
-                        selectedColor: _selectedColor,
-                        onColorSelected: (color) {
+                    // Icon Selection
+                    _buildSectionLabel('Icon'),
+                    Container(
+                      height: 180, // Fixed height for scrollable grid
+                      child: IconPicker(
+                        selectedIconName: _selectedIconName,
+                        onIconSelected: (iconName) {
                           setState(() {
-                            _selectedColor = color;
-                            _hasUnsavedChanges = true;
+                            _selectedIconName = iconName;
                           });
-
-                          // Auto-save the change
-                          if (_isEditing) {
-                            _autoSaveChanges();
-                          }
                         },
                       ),
-                      const SizedBox(height: 40),
+                    ),
+                    const SizedBox(height: 24),
 
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _saveHabit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                          child: Text(
-                            _isEditing ? 'Save Changes' : 'Save',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                    // Color Selection
+                    _buildSectionLabel('Color'),
+                    ColorPicker(
+                      selectedColor: _selectedColor,
+                      onColorSelected: (color) {
+                        setState(() {
+                          _selectedColor = color;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -671,14 +560,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                     onPressed: () {
                       setState(() {
                         _selectedCategories = tempSelectedCategories;
-                        _hasUnsavedChanges = true;
                       });
-
-                      // Auto-save the change
-                      if (_isEditing) {
-                        _autoSaveChanges();
-                      }
-
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
@@ -767,13 +649,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     if (result != null) {
       setState(() {
         _interval = result;
-        _hasUnsavedChanges = true;
       });
-
-      // Auto-save the change
-      if (_isEditing) {
-        _autoSaveChanges();
-      }
     }
   }
 
@@ -819,13 +695,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
       setState(() {
         _reminderDays = result['days'];
         _reminderTime = result['time'];
-        _hasUnsavedChanges = true;
       });
-
-      // Auto-save the change
-      if (_isEditing) {
-        _autoSaveChanges();
-      }
     }
   }
 }
