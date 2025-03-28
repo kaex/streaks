@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Add notification permissions for iOS -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Streaks needs calendar access to schedule habit reminders.</string>
+	<key>NSNotificationsUsageDescription</key>
+	<string>Streaks would like to send you notifications to remind you about your habits.</string>
 </dict>
 </plist>

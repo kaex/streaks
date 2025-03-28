@@ -16,16 +16,20 @@ class NotificationService {
     // Initialize time zones
     tz_data.initializeTimeZones();
 
+    // Set local timezone
+    final String timeZoneName = tz.local.name;
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+
     // Set up Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+        AndroidInitializationSettings('notification_icon');
 
     // Set up iOS initialization settings
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false, // We'll request this separately
+      requestBadgePermission: false, // We'll request this separately
+      requestSoundPermission: false, // We'll request this separately
       onDidReceiveLocalNotification:
           (int id, String? title, String? body, String? payload) async {
         // Handle the notification
@@ -44,6 +48,7 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         // Handle notification taps
+        debugPrint('Notification response received: ${response.payload}');
       },
     );
   }
@@ -68,20 +73,39 @@ class NotificationService {
 
     // If there's no reminder time or no days selected, don't schedule
     if (habit.reminderTime == null || !habit.reminderDays.contains(true)) {
+      debugPrint('No reminders set for habit: ${habit.title}');
       return;
     }
+
+    debugPrint('Scheduling notifications for habit: ${habit.title}');
 
     // For each selected day, schedule a notification
     for (int i = 0; i < habit.reminderDays.length; i++) {
       if (habit.reminderDays[i]) {
-        await _scheduleWeeklyNotification(
-          habit.id.hashCode + i, // Unique ID for each day
-          habit.id,
-          'Time for ${habit.title}!',
-          'Keep your streak going - ${habit.description}',
-          _getDayOfWeek(i), // Convert our day index to Day enum
-          habit.reminderTime!,
-        );
+        final dayName = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday'
+        ][i];
+        debugPrint(
+            '  - Scheduling for $dayName at ${habit.reminderTime!.hour}:${habit.reminderTime!.minute}');
+
+        try {
+          await _scheduleWeeklyNotification(
+            habit.id.hashCode + i, // Unique ID for each day
+            habit.id,
+            'Time for ${habit.title}!',
+            'Keep your streak going - ${habit.description}',
+            _getDayOfWeek(i), // Convert our day index to Day enum
+            habit.reminderTime!,
+          );
+        } catch (e) {
+          debugPrint('Failed to schedule notification: $e');
+        }
       }
     }
   }
@@ -95,46 +119,61 @@ class NotificationService {
     Day day,
     TimeOfDay reminderTime,
   ) async {
-    // Create notification details
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'habit_reminder_channel',
-      'Habit Reminders',
-      channelDescription:
-          'This channel is used for habit reminder notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-      enableLights: true,
-      color: Colors.purple,
-      ticker: 'habit',
-      icon: '@mipmap/launcher_icon',
-    );
+    debugPrint(
+        'Scheduling notification id=$id for day=${day.name} at ${reminderTime.hour}:${reminderTime.minute}');
 
-    final DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+    try {
+      // Create notification details
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'habit_reminder_channel',
+        'Habit Reminders',
+        channelDescription:
+            'This channel is used for habit reminder notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableLights: true,
+        color: Colors.purple,
+        ticker: 'habit',
+        icon:
+            'notification_icon', // This will fall back to the default app icon
+      );
 
-    final NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
-    );
+      final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+          DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
 
-    // Schedule the notification
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      _nextInstanceOfDayTime(day, reminderTime),
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-      payload: habitId,
-    );
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      // Calculate next occurrence
+      final scheduledDate = _nextInstanceOfDayTime(day, reminderTime);
+      debugPrint('  Scheduled for: ${scheduledDate.toString()}');
+
+      // Schedule the notification
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: habitId,
+      );
+
+      debugPrint('  Notification scheduled successfully');
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+      rethrow; // Rethrow to let the caller handle it
+    }
   }
 
   // Calculate the next instance of a specific day and time

@@ -18,8 +18,24 @@ class NotificationManager extends ChangeNotifier {
   Future<void> _init() async {
     await _loadSettings();
     await _notificationService.init();
-    // Automatically request permissions on first run
-    await _notificationService.requestPermissions();
+
+    if (_notificationsEnabled) {
+      // Request permissions if notifications are enabled by default
+      final permissionGranted = await _notificationService.requestPermissions();
+
+      // If permissions were denied but we're trying to enable notifications by default,
+      // update our state to match reality
+      if (!permissionGranted && _notificationsEnabled) {
+        _notificationsEnabled = false;
+        // Save this state silently
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_notificationsEnabledKey, false);
+        } catch (e) {
+          debugPrint('Error saving notification settings: $e');
+        }
+      }
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -34,6 +50,16 @@ class NotificationManager extends ChangeNotifier {
 
   Future<void> setNotificationsEnabled(bool enabled) async {
     if (_notificationsEnabled == enabled) return;
+
+    // If enabling notifications, request permissions first
+    if (enabled) {
+      bool permissionGranted = await _notificationService.requestPermissions();
+      if (!permissionGranted) {
+        // If permissions were denied, don't enable notifications
+        debugPrint('Notification permissions denied');
+        return;
+      }
+    }
 
     _notificationsEnabled = enabled;
     notifyListeners();
