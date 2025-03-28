@@ -89,55 +89,6 @@ class NotificationSettingsScreen extends StatelessWidget {
                       }
                     },
                   ),
-
-                  // Add test notification button
-                  if (notificationManager.notificationsEnabled)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final notificationService = NotificationService();
-
-                            // First check if we have permission
-                            bool hasPermission =
-                                await notificationService.requestPermissions();
-                            if (!hasPermission) {
-                              if (context.mounted) {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text('Permission Required'),
-                                      content: const Text(
-                                        'Please allow notifications in your device settings to receive habit reminders.',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              }
-                              return;
-                            }
-
-                            await notificationService.showTestNotification();
-                          },
-                          icon: const Icon(Icons.notifications_active),
-                          label: const Text('Send Test Notification'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentColor,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
