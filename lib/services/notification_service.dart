@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'dart:math';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import '../models/habit.dart';
 
 class NotificationService {
@@ -12,6 +13,16 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    // Initialize time zones
+    tz.initializeTimeZones();
+
+    // Use the device's local timezone
+    final String timeZoneName = DateTime.now().timeZoneName;
+    debugPrint('Device timezone: $timeZoneName');
+
+    // Default to local timezone without specifying a location name
+    tz.setLocalLocation(tz.local);
+
     // Set up Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('notification_icon');
@@ -142,7 +153,7 @@ class NotificationService {
         '=== Scheduled $scheduledCount notifications for habit: ${habit.title} ===');
   }
 
-  // Schedule a single notification for immediate delivery
+  // Schedule a notification for specific weekday at specific time
   Future<void> _scheduleNotificationForWeekday(
     int id,
     String habitId,
@@ -183,8 +194,6 @@ class NotificationService {
         iOS: iOSPlatformChannelSpecifics,
       );
 
-      // Calculate next occurrence
-      final now = DateTime.now();
       final dayNames = [
         'Monday',
         'Tuesday',
@@ -196,56 +205,49 @@ class NotificationService {
       ];
       final dayName = dayNames[weekday - 1]; // Convert 1-based to 0-based index
 
-      // Create today's date with the reminder time
-      DateTime scheduledTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        reminderTime.hour,
-        reminderTime.minute,
+      // Calculate the next instance of the weekday and time
+      final nextOccurrence = _nextInstanceOfWeekdayTime(weekday, reminderTime);
+      debugPrint('Next occurrence: ${nextOccurrence.toString()}');
+
+      // Schedule notification with zonedSchedule
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        nextOccurrence,
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: habitId,
       );
 
-      // Calculate days until target weekday (0 if today is the target day)
-      int daysUntil = (weekday - now.weekday) % 7;
-
-      // If today is the target day but the time has passed, schedule for next week
-      if (daysUntil == 0 && now.isAfter(scheduledTime)) {
-        daysUntil = 7;
-      }
-
-      // Add days until the target weekday
-      scheduledTime = scheduledTime.add(Duration(days: daysUntil));
-
-      debugPrint('Calculated next occurrence: ${scheduledTime.toString()}');
-
-      // Create a unique ID for this notification
-      final notificationId = id;
-
-      // Calculate seconds until notification time
-      final secondsUntil = scheduledTime.difference(now).inSeconds;
-      debugPrint('Seconds until notification: $secondsUntil');
-
-      if (secondsUntil > 0) {
-        // Only schedule for future time
-        // Use pending intent approach
-        await flutterLocalNotificationsPlugin.periodicallyShow(
-          notificationId,
-          title,
-          body,
-          RepeatInterval.weekly, // Will repeat weekly
-          platformChannelSpecifics,
-          payload: habitId,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        );
-
-        debugPrint(
-            'Notification scheduled for $dayName at ${_formatTime(reminderTime)} (will repeat weekly)');
-      } else {
-        debugPrint('Cannot schedule in the past, notification not set');
-      }
+      debugPrint(
+          'Weekly notification scheduled for $dayName at ${_formatTime(reminderTime)}');
     } catch (e) {
       debugPrint('Error scheduling notification: $e');
     }
+  }
+
+  // Calculate the next instance of a specific weekday and time
+  tz.TZDateTime _nextInstanceOfWeekdayTime(int weekday, TimeOfDay time) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+
+    // Move forward to the correct weekday if needed
+    while (scheduledDate.weekday != weekday || scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(Duration(days: 1));
+    }
+
+    return scheduledDate;
   }
 
   // Format time for display
