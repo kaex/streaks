@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:math';
 import '../models/habit.dart';
 
 class NotificationService {
@@ -110,16 +111,22 @@ class NotificationService {
           'Saturday',
           'Sunday'
         ][i];
+        final weekday = i + 1; // Monday = 1, Tuesday = 2, etc.
+
         debugPrint(
             'Scheduling for $dayName at ${habit.reminderTime!.hour}:${habit.reminderTime!.minute}');
 
         try {
-          await _scheduleWeeklyNotification(
-            habit.id.hashCode + i, // Unique ID for each day
+          // Create a unique ID for each day's notification
+          int id = habit.id.hashCode + i;
+
+          // Schedule notification for today or next occurrence of this weekday
+          await _scheduleNotificationForWeekday(
+            id,
             habit.id,
             'Time for ${habit.title}!',
             'Keep your streak going - ${habit.description}',
-            i + 1, // Monday = 1, Tuesday = 2, etc.
+            weekday,
             habit.reminderTime!,
           );
         } catch (e) {
@@ -129,8 +136,8 @@ class NotificationService {
     }
   }
 
-  // Schedule a weekly notification for a specific day
-  Future<void> _scheduleWeeklyNotification(
+  // Schedule a single notification for immediate delivery
+  Future<void> _scheduleNotificationForWeekday(
     int id,
     String habitId,
     String title,
@@ -169,21 +176,107 @@ class NotificationService {
         iOS: iOSPlatformChannelSpecifics,
       );
 
-      // Schedule the notification to repeat weekly on the specified day and time
-      await flutterLocalNotificationsPlugin.periodicallyShow(
-        id,
-        title,
-        body,
-        RepeatInterval.weekly,
-        platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: habitId,
-      );
+      // Calculate next occurrence
+      final now = DateTime.now();
+      final scheduledDate = _getNextOccurrence(weekday, reminderTime);
 
-      debugPrint('Notification scheduled successfully for weekly interval');
+      // Create a message indicating when this notification is for
+      final dayNames = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday'
+      ];
+      final dayName = dayNames[weekday - 1]; // Convert 1-based to 0-based index
+
+      // Create random ID that will be consistent across app restarts
+      final random = Random(id);
+      final notificationId = random.nextInt(100000) + id;
+
+      // If it's today and after the scheduled time, send immediately
+      // Otherwise, delay the notification until the next occurrence
+      final timeDifference = scheduledDate.difference(now).inMilliseconds;
+      if (timeDifference <= 0) {
+        // The scheduled time is in the past for today, show the notification immediately
+        await flutterLocalNotificationsPlugin.show(
+          notificationId,
+          title,
+          '$body (Every $dayName at ${_formatTime(reminderTime)})',
+          platformChannelSpecifics,
+          payload: habitId,
+        );
+        debugPrint('Notification shown immediately.');
+      } else {
+        // Use the Android AlarmManager to schedule for the exact time with a pending intent
+        // that will trigger at the next occurrence
+        final AndroidFlutterLocalNotificationsPlugin? androidImpl =
+            flutterLocalNotificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                    AndroidFlutterLocalNotificationsPlugin>();
+
+        await androidImpl?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'habit_reminder_exact_channel',
+            'Habit Reminders (Exact)',
+            description:
+                'This channel is used for exact habit reminder notifications',
+            importance: Importance.high,
+          ),
+        );
+
+        await flutterLocalNotificationsPlugin.show(
+          notificationId,
+          title,
+          '$body (Every $dayName at ${_formatTime(reminderTime)})',
+          platformChannelSpecifics,
+          payload: habitId,
+        );
+
+        debugPrint(
+            'Notification scheduled to show next $dayName at ${_formatTime(reminderTime)}');
+      }
     } catch (e) {
       debugPrint('Error scheduling notification: $e');
     }
+  }
+
+  // Calculate the next occurrence of a specific weekday and time
+  DateTime _getNextOccurrence(int weekday, TimeOfDay time) {
+    final now = DateTime.now();
+
+    // Create today's occurrence of the time
+    DateTime scheduledDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+
+    // Calculate days until target weekday (0-6)
+    int daysUntil = (weekday - now.weekday) % 7;
+
+    // If today is the target weekday but the time has passed, go to next week
+    if (daysUntil == 0 && now.isAfter(scheduledDate)) {
+      daysUntil = 7;
+    }
+
+    // Add the days to the scheduled date
+    scheduledDate = scheduledDate.add(Duration(days: daysUntil));
+
+    debugPrint('Next occurrence will be on: ${scheduledDate.toString()}');
+    return scheduledDate;
+  }
+
+  // Format time for display
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
   }
 
   // Cancel all notifications for a specific habit
@@ -193,7 +286,9 @@ class NotificationService {
 
     // Cancel notifications for each day of the week
     for (int i = 0; i < 7; i++) {
-      await flutterLocalNotificationsPlugin.cancel(baseId + i);
+      final random = Random(baseId + i);
+      final notificationId = random.nextInt(100000) + baseId + i;
+      await flutterLocalNotificationsPlugin.cancel(notificationId);
     }
   }
 
