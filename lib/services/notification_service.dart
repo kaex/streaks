@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/habit.dart';
@@ -17,11 +18,9 @@ class NotificationService {
     tz.initializeTimeZones();
 
     // Use the device's local timezone
-    final String timeZoneName = DateTime.now().timeZoneName;
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
     debugPrint('Device timezone: $timeZoneName');
-
-    // Default to local timezone without specifying a location name
-    tz.setLocalLocation(tz.local);
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     // Set up Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =

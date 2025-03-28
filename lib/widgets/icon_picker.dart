@@ -18,9 +18,8 @@ class IconPicker extends StatelessWidget {
     final textColor = isDarkMode ? Colors.white : Colors.black;
     final unselectedIconColor = isDarkMode ? Colors.white : Colors.black87;
 
-    return Container(
+    return SizedBox(
       height: 300,
-      padding: const EdgeInsets.all(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

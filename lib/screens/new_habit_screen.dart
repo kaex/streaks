@@ -332,7 +332,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
 
                     // Icon Selection
                     _buildSectionLabel('Icon'),
-                    Container(
+                    SizedBox(
                       height: 180, // Fixed height for scrollable grid
                       child: IconPicker(
                         selectedIconName: _selectedIconName,
