@@ -237,7 +237,7 @@ class _ShareCustomizationScreenState extends State<ShareCustomizationScreen> {
                               ),
                               const SizedBox(width: 4),
                               const Text(
-                                'Streaks',
+                                'Streaks - Habit Tracker',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
