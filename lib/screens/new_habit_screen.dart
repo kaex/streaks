@@ -161,10 +161,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
 
   // Show confirmation dialog if there are unsaved changes
   Future<bool> _confirmExit() async {
+    // Actually check if there are real changes, don't just rely on _hasUnsavedChanges flag
     final hasChanges = _checkForChanges();
 
     if (!hasChanges) {
-      return true; // No changes, so just exit
+      return true; // No changes, so just exit without prompting
     }
 
     // Show dialog to confirm exit without saving
