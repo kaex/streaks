@@ -57,7 +57,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
 
-    // Add listeners to detect changes
+    // Listen for text changes to auto-save
     _titleController.addListener(_onFieldChanged);
     _descriptionController.addListener(_onFieldChanged);
 
@@ -67,10 +67,41 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
   }
 
   void _onFieldChanged() {
-    if (!_hasUnsavedChanges) {
-      setState(() {
-        _hasUnsavedChanges = true;
-      });
+    _autoSaveChanges();
+  }
+
+  // Auto-save changes
+  void _autoSaveChanges() {
+    if (!_isEditing || _existingHabit == null) return;
+
+    // Only continue if form is valid
+    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final habit = Habit(
+        id: _existingHabit!.id,
+        title: _titleController.text,
+        description: _descriptionController.text,
+        startDate: _startDate,
+        reminderDays: _reminderDays,
+        reminderTime: _reminderTime,
+        interval: _interval,
+        color: _selectedColor,
+        iconName: _selectedIconName,
+        streakGoal: _streakGoal,
+        categories: _selectedCategories.isNotEmpty
+            ? _selectedCategories.toList()
+            : null,
+        completionDates: _existingHabit!.completionDates,
+      );
+
+      final habitsProvider =
+          Provider.of<HabitsProvider>(context, listen: false);
+
+      // Update the habit
+      habitsProvider.updateHabit(habit, context: context);
+
+      debugPrint('Auto-saved changes to habit: ${habit.title}');
     }
   }
 
@@ -101,101 +132,33 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
           _selectedCategories = Set.from(_existingHabit!.categories!);
         }
 
-        setState(() {
-          _hasUnsavedChanges = false;
-        });
+        setState(() {});
       }
     }
   }
 
   @override
   void dispose() {
+    // Save changes when leaving the screen
+    if (_isEditing) {
+      _saveHabit();
+    }
+
+    // Remove listeners
     _titleController.removeListener(_onFieldChanged);
     _descriptionController.removeListener(_onFieldChanged);
+
+    // Dispose controllers
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
-  // Check if the form has changes compared to the original habit
-  bool _checkForChanges() {
-    if (!_isEditing) {
-      // For new habits, check if any fields have been filled
-      return _titleController.text.isNotEmpty ||
-          _descriptionController.text.isNotEmpty ||
-          _reminderTime != null ||
-          _reminderDays.contains(true) ||
-          _interval != 'daily' ||
-          _selectedIconName != 'book' ||
-          _selectedColor != AppTheme.themeColors[4] ||
-          _streakGoal != 1 ||
-          _selectedCategories.isNotEmpty;
-    }
-
-    // For existing habits, compare with original values
-    return _titleController.text != _existingHabit!.title ||
-        _descriptionController.text != _existingHabit!.description ||
-        !_areReminderDaysEqual(_reminderDays, _existingHabit!.reminderDays) ||
-        _reminderTime != _existingHabit!.reminderTime ||
-        _interval != _existingHabit!.interval ||
-        _selectedColor != _existingHabit!.color ||
-        _selectedIconName != _existingHabit!.iconName ||
-        _streakGoal != _existingHabit!.streakGoal ||
-        !_areCategoriesEqual(_selectedCategories, _existingHabit!.categories);
-  }
-
-  bool _areReminderDaysEqual(List<bool> list1, List<bool> list2) {
-    if (list1.length != list2.length) return false;
-    for (int i = 0; i < list1.length; i++) {
-      if (list1[i] != list2[i]) return false;
-    }
-    return true;
-  }
-
-  bool _areCategoriesEqual(Set<String>? set1, List<String>? list2) {
-    if (set1 == null && (list2 == null || list2.isEmpty)) return true;
-    if (set1 == null || list2 == null) return false;
-    if (set1.length != list2.length) return false;
-    return set1.containsAll(list2);
-  }
-
-  // Show confirmation dialog if there are unsaved changes
-  Future<bool> _confirmExit() async {
-    // Actually check if there are real changes, don't just rely on _hasUnsavedChanges flag
-    final hasChanges = _checkForChanges();
-
-    if (!hasChanges) {
-      return true; // No changes, so just exit without prompting
-    }
-
-    // Show dialog to confirm exit without saving
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Changes?'),
-        content: const Text(
-            'You have unsaved changes. Would you like to save them before exiting?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Discard'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save',
-                style: TextStyle(color: AppTheme.accentColor)),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      // User wants to save
+  // Override the back button to save changes
+  Future<bool> _onWillPop() async {
+    if (_isEditing) {
       _saveHabit();
-      return true;
     }
-
-    // If result is false (discard) or null (dialog dismissed), exit without saving
     return true;
   }
 
@@ -210,7 +173,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[700];
 
     return WillPopScope(
-      onWillPop: _confirmExit,
+      onWillPop: _onWillPop,
       child: Scaffold(
         backgroundColor: scaffoldBgColor,
         appBar: AppBar(
@@ -225,11 +188,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
           ),
           leading: IconButton(
             icon: Icon(Icons.close, color: textColor),
-            onPressed: () async {
-              final canExit = await _confirmExit();
-              if (canExit && context.mounted) {
-                Navigator.pop(context);
+            onPressed: () {
+              if (_isEditing) {
+                _saveHabit();
               }
+              Navigator.pop(context);
             },
           ),
         ),
@@ -399,7 +362,13 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                               if (_streakGoal > 1) {
                                 setState(() {
                                   _streakGoal--;
+                                  _hasUnsavedChanges = true;
                                 });
+
+                                // Auto-save the change
+                                if (_isEditing) {
+                                  _autoSaveChanges();
+                                }
                               }
                             },
                           ),
@@ -409,7 +378,13 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                             onPressed: () {
                               setState(() {
                                 _streakGoal++;
+                                _hasUnsavedChanges = true;
                               });
+
+                              // Auto-save the change
+                              if (_isEditing) {
+                                _autoSaveChanges();
+                              }
                             },
                           ),
                         ],
@@ -427,6 +402,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                               _selectedIconName = iconName;
                               _hasUnsavedChanges = true;
                             });
+
+                            // Auto-save the change
+                            if (_isEditing) {
+                              _autoSaveChanges();
+                            }
                           },
                         ),
                       ),
@@ -441,6 +421,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                             _selectedColor = color;
                             _hasUnsavedChanges = true;
                           });
+
+                          // Auto-save the change
+                          if (_isEditing) {
+                            _autoSaveChanges();
+                          }
                         },
                       ),
                       const SizedBox(height: 40),
@@ -545,13 +530,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
       ),
       child: IconButton(
         icon: Icon(icon),
-        onPressed: () {
-          onPressed();
-          // Mark that there are unsaved changes
-          setState(() {
-            _hasUnsavedChanges = true;
-          });
-        },
+        onPressed: onPressed,
         color: iconColor,
       ),
     );
@@ -694,6 +673,12 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                         _selectedCategories = tempSelectedCategories;
                         _hasUnsavedChanges = true;
                       });
+
+                      // Auto-save the change
+                      if (_isEditing) {
+                        _autoSaveChanges();
+                      }
+
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
@@ -784,6 +769,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
         _interval = result;
         _hasUnsavedChanges = true;
       });
+
+      // Auto-save the change
+      if (_isEditing) {
+        _autoSaveChanges();
+      }
     }
   }
 
@@ -831,6 +821,11 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
         _reminderTime = result['time'];
         _hasUnsavedChanges = true;
       });
+
+      // Auto-save the change
+      if (_isEditing) {
+        _autoSaveChanges();
+      }
     }
   }
 }
