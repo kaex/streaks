@@ -127,19 +127,23 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _saveHabit,
-        backgroundColor: AppTheme.accentColor,
-        label: Text(
-          _isEditing ? 'Save Changes' : 'Save',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+      floatingActionButton: Container(
+        height: 60,
+        width: 200,
+        child: FloatingActionButton.extended(
+          onPressed: _saveHabit,
+          backgroundColor: AppTheme.accentColor,
+          label: Text(
+            _isEditing ? 'Save Changes' : 'Save',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
