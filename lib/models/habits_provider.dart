@@ -1,0 +1,94 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'habit.dart';
+
+class HabitsProvider with ChangeNotifier {
+  List<Habit> _habits = [];
+  static const String _prefsKey = 'habits';
+  bool _isLoading = true;
+
+  HabitsProvider() {
+    _loadHabits();
+  }
+
+  List<Habit> get habits => _habits;
+  bool get isLoading => _isLoading;
+
+  Future<void> _loadHabits() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final habitsJson = prefs.getStringList(_prefsKey);
+
+      if (habitsJson != null) {
+        _habits = habitsJson
+            .map((habitJson) => Habit.fromJson(jsonDecode(habitJson)))
+            .toList();
+      }
+    } catch (e) {
+      print('Error loading habits: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveHabits() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final habitsJson =
+          _habits.map((habit) => jsonEncode(habit.toJson())).toList();
+      await prefs.setStringList(_prefsKey, habitsJson);
+    } catch (e) {
+      print('Error saving habits: $e');
+    }
+  }
+
+  Future<void> addHabit(Habit habit) async {
+    _habits.add(habit);
+    notifyListeners();
+    await _saveHabits();
+  }
+
+  Future<void> updateHabit(Habit updatedHabit) async {
+    final index = _habits.indexWhere((habit) => habit.id == updatedHabit.id);
+    if (index != -1) {
+      _habits[index] = updatedHabit;
+      notifyListeners();
+      await _saveHabits();
+    }
+  }
+
+  Future<void> deleteHabit(String habitId) async {
+    _habits.removeWhere((habit) => habit.id == habitId);
+    notifyListeners();
+    await _saveHabits();
+  }
+
+  Future<void> toggleHabitCompletion(String habitId) async {
+    final index = _habits.indexWhere((habit) => habit.id == habitId);
+    if (index != -1) {
+      final habit = _habits[index];
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      final completionDates = Map<DateTime, bool>.from(habit.completionDates);
+      final isCompleted = habit.completionDates[todayDate] ?? false;
+
+      completionDates[todayDate] = !isCompleted;
+
+      _habits[index] = habit.copyWith(completionDates: completionDates);
+      notifyListeners();
+      await _saveHabits();
+    }
+  }
+
+  Habit? getHabitById(String id) {
+    try {
+      return _habits.firstWhere((habit) => habit.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+}
