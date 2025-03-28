@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../models/theme_provider.dart';
+import '../utils/webview_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -81,8 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Privacy Policy',
             subtitle: 'How we handle your data',
             onTap: () {
-              _showComingSoonDialog('Privacy Policy',
-                  'Our privacy policy will be available soon in a web view.');
+              context.openPrivacyPolicy();
             },
           ),
           _buildSettingItem(
@@ -90,8 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Terms of Service',
             subtitle: 'Legal terms for using Streaks',
             onTap: () {
-              _showComingSoonDialog('Terms of Service',
-                  'Our terms of service will be available soon in a web view.');
+              context.openTermsOfService();
             },
           ),
 
