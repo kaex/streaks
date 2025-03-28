@@ -178,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _shareApp() {
     Share.share(
-      'Check out Streaks - Habit Tracker, the best app to build and maintain habits!',
+      'Check out Streaks - Habit Tracker, the best app to build and maintain habits! @http://play.google.com/store/apps/details?id=com.baransel.dev.streaks.habit.tracker',
     );
   }
 
