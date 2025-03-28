@@ -130,9 +130,19 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _saveHabit,
         backgroundColor: AppTheme.accentColor,
-        icon: const Icon(Icons.save),
-        label: Text(_isEditing ? 'Save Changes' : 'Save'),
+        label: Text(
+          _isEditing ? 'Save Changes' : 'Save',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 80),
         child: Column(
