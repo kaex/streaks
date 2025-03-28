@@ -59,7 +59,7 @@ class NotificationManager extends ChangeNotifier {
         // If permissions were denied, don't enable notifications and show guidance
         debugPrint('Notification permissions denied');
 
-        // Show a dialog explaining how to enable permissions
+        // Show a simple dialog explaining how to enable permissions
         if (context.mounted) {
           showDialog(
             context: context,
@@ -67,19 +67,12 @@ class NotificationManager extends ChangeNotifier {
               return AlertDialog(
                 title: const Text('Permission Required'),
                 content: const Text(
-                  'Notifications permission was denied. To enable notifications, please go to your device settings and grant notification permission to the app.',
+                  'Please allow notifications in your device settings to receive habit reminders.',
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _notificationService.requestPermissions();
-                    },
-                    child: const Text('Try Again'),
-                  ),
-                  TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const Text('OK'),
                   ),
                 ],
               );

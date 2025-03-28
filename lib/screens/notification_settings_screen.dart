@@ -83,35 +83,9 @@ class NotificationSettingsScreen extends StatelessWidget {
                           value, context);
 
                       if (value) {
-                        // Show snackbar with message that notifications have been enabled
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                                'Notifications enabled! Your habit reminders have been scheduled.'),
-                            duration: const Duration(seconds: 3),
-                            action: SnackBarAction(
-                              label: 'OK',
-                              onPressed: () {},
-                            ),
-                          ),
-                        );
-
-                        // Reschedule all habit notifications
+                        // Reschedule all habit notifications without showing a snackbar
                         _rescheduleAllNotifications(
                             context, habitsProvider.habits);
-                      } else {
-                        // Show snackbar with message that notifications have been disabled
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                                'Notifications disabled! You won\'t receive any reminders.'),
-                            duration: const Duration(seconds: 3),
-                            action: SnackBarAction(
-                              label: 'OK',
-                              onPressed: () {},
-                            ),
-                          ),
-                        );
                       }
                     },
                   ),
@@ -120,68 +94,48 @@ class NotificationSettingsScreen extends StatelessWidget {
                   if (notificationManager.notificationsEnabled)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Row(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () async {
-                              final notificationService = NotificationService();
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final notificationService = NotificationService();
 
-                              // First check if we have permission
-                              bool hasPermission = await notificationService
-                                  .requestPermissions();
-                              if (!hasPermission) {
-                                if (context.mounted) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title:
-                                            const Text('Permission Required'),
-                                        content: const Text(
-                                          'Notifications permission is required. Please go to your device settings to enable notifications for this app.',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              notificationService
-                                                  .requestPermissions();
-                                            },
-                                            child: const Text('Try Again'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text('Cancel'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                }
-                                return;
-                              }
-
-                              await notificationService.showTestNotification();
-
+                            // First check if we have permission
+                            bool hasPermission =
+                                await notificationService.requestPermissions();
+                            if (!hasPermission) {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Test notification sent! You should receive it in a moment.'),
-                                    duration: Duration(seconds: 3),
-                                  ),
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Permission Required'),
+                                      content: const Text(
+                                        'Please allow notifications in your device settings to receive habit reminders.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
                               }
-                            },
-                            icon: const Icon(Icons.notifications_active),
-                            label: const Text('Send Test Notification'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.accentColor,
-                              foregroundColor: Colors.white,
-                            ),
+                              return;
+                            }
+
+                            await notificationService.showTestNotification();
+                          },
+                          icon: const Icon(Icons.notifications_active),
+                          label: const Text('Send Test Notification'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentColor,
+                            foregroundColor: Colors.white,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                 ],
