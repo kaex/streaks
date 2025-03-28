@@ -179,6 +179,8 @@ class NotificationService {
   // Calculate the next instance of a specific day and time
   tz.TZDateTime _nextInstanceOfDayTime(Day day, TimeOfDay time) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    debugPrint('Current time (local): ${now.toString()}');
+
     tz.TZDateTime scheduledDate = tz.TZDateTime(
       tz.local,
       now.year,
@@ -187,20 +189,30 @@ class NotificationService {
       time.hour,
       time.minute,
     );
+    debugPrint('Initial scheduled date: ${scheduledDate.toString()}');
+    debugPrint(
+        'Target day: ${day.toString()}, Current weekday: ${scheduledDate.weekday}');
 
     // Calculate days until the target day
-    int daysUntil = day.index - scheduledDate.weekday + 1;
+    int daysUntil = day.index - scheduledDate.weekday;
+    debugPrint(
+        'Initial daysUntil calculation: $daysUntil = ${day.index} - ${scheduledDate.weekday}');
+
     if (daysUntil < 0) {
       daysUntil += 7;
+      debugPrint('daysUntil was negative, adding 7: $daysUntil');
     } else if (daysUntil == 0 &&
         (scheduledDate.hour > time.hour ||
             (scheduledDate.hour == time.hour &&
                 scheduledDate.minute >= time.minute))) {
       daysUntil = 7;
+      debugPrint(
+          'daysUntil was 0 but time is in the past, adding 7: $daysUntil');
     }
 
     // Add the days until the target
     scheduledDate = scheduledDate.add(Duration(days: daysUntil));
+    debugPrint('Final scheduled date: ${scheduledDate.toString()}');
 
     return scheduledDate;
   }
@@ -209,7 +221,21 @@ class NotificationService {
   Day _getDayOfWeek(int dayIndex) {
     // Our indices: 0=Monday, 1=Tuesday, ..., 6=Sunday
     // Flutter's Day enum: 1=Monday, 2=Tuesday, ..., 7=Sunday
-    return Day.values[dayIndex];
+
+    // Day.monday => 1, Day.tuesday => 2, etc.
+    // Need to map our 0-based index to Flutter's 1-based Day enum
+    final Map<int, Day> dayMap = {
+      0: Day.monday, // Monday
+      1: Day.tuesday, // Tuesday
+      2: Day.wednesday, // Wednesday
+      3: Day.thursday, // Thursday
+      4: Day.friday, // Friday
+      5: Day.saturday, // Saturday
+      6: Day.sunday, // Sunday
+    };
+
+    debugPrint('Converting day index $dayIndex to ${dayMap[dayIndex]}');
+    return dayMap[dayIndex]!;
   }
 
   // Cancel all notifications for a specific habit
@@ -226,5 +252,50 @@ class NotificationService {
   // Cancel all notifications
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  // Show an immediate test notification
+  Future<void> showTestNotification() async {
+    debugPrint('Showing test notification');
+
+    // Create notification details
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'test_channel',
+      'Test Notifications',
+      channelDescription: 'Used for testing notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      enableLights: true,
+      color: Colors.red,
+      ticker: 'test',
+      icon: 'notification_icon',
+    );
+
+    final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    try {
+      // Show the notification immediately
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        'Test Notification',
+        'This is a test notification from Streaks app.',
+        platformChannelSpecifics,
+        payload: 'test',
+      );
+      debugPrint('Test notification sent successfully');
+    } catch (e) {
+      debugPrint('Error showing test notification: $e');
+    }
   }
 }

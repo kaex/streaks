@@ -4,6 +4,7 @@ import '../models/notification_manager.dart';
 import '../models/habits_provider.dart';
 import '../theme/app_theme.dart';
 import 'new_habit_screen.dart';
+import '../services/notification_service.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({Key? key}) : super(key: key);
@@ -57,58 +58,93 @@ class NotificationSettingsScreen extends StatelessWidget {
                         ),
                       ],
               ),
-              child: SwitchListTile(
-                title: Text(
-                  'Enable Notifications',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                ),
-                subtitle: Text(
-                  'Turn off to disable all habit reminders',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: subtitleColor,
-                  ),
-                ),
-                value: notificationManager.notificationsEnabled,
-                activeColor: AppTheme.accentColor,
-                onChanged: (value) {
-                  notificationManager.setNotificationsEnabled(value);
-
-                  if (value) {
-                    // Show snackbar with message that notifications have been enabled
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                            'Notifications enabled! Your habit reminders have been scheduled.'),
-                        duration: const Duration(seconds: 3),
-                        action: SnackBarAction(
-                          label: 'OK',
-                          onPressed: () {},
-                        ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: Text(
+                      'Enable Notifications',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
                       ),
-                    );
-
-                    // Reschedule all habit notifications
-                    _rescheduleAllNotifications(context, habitsProvider.habits);
-                  } else {
-                    // Show snackbar with message that notifications have been disabled
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                            'Notifications disabled! You won\'t receive any reminders.'),
-                        duration: const Duration(seconds: 3),
-                        action: SnackBarAction(
-                          label: 'OK',
-                          onPressed: () {},
-                        ),
+                    ),
+                    subtitle: Text(
+                      'Turn off to disable all habit reminders',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: subtitleColor,
                       ),
-                    );
-                  }
-                },
+                    ),
+                    value: notificationManager.notificationsEnabled,
+                    activeColor: AppTheme.accentColor,
+                    onChanged: (value) {
+                      notificationManager.setNotificationsEnabled(value);
+
+                      if (value) {
+                        // Show snackbar with message that notifications have been enabled
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                                'Notifications enabled! Your habit reminders have been scheduled.'),
+                            duration: const Duration(seconds: 3),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
+
+                        // Reschedule all habit notifications
+                        _rescheduleAllNotifications(
+                            context, habitsProvider.habits);
+                      } else {
+                        // Show snackbar with message that notifications have been disabled
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                                'Notifications disabled! You won\'t receive any reminders.'),
+                            duration: const Duration(seconds: 3),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+
+                  // Add test notification button
+                  if (notificationManager.notificationsEnabled)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final notificationService = NotificationService();
+                              await notificationService.showTestNotification();
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Test notification sent! You should receive it in a moment.'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.notifications_active),
+                            label: const Text('Send Test Notification'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accentColor,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
