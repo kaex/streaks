@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/scheduler.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  bool _isDarkMode = true;
+  bool _isDarkMode = false;
   static const String _darkModeKey = 'isDarkMode';
   late Future<void> initialized;
 
@@ -15,11 +16,27 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _loadThemeFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _isDarkMode = prefs.getBool(_darkModeKey) ?? true;
+
+      // Check if a preference has been set
+      if (prefs.containsKey(_darkModeKey)) {
+        _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
+      } else {
+        // If no preference is set, use system theme
+        var brightness =
+            SchedulerBinding.instance.platformDispatcher.platformBrightness;
+        _isDarkMode = brightness == Brightness.dark;
+
+        // Save this initial preference
+        await prefs.setBool(_darkModeKey, _isDarkMode);
+      }
+
       notifyListeners();
     } catch (e) {
-      // If there's an error loading preferences, default to dark mode
-      _isDarkMode = true;
+      // If there's an error loading preferences, check system theme
+      var brightness =
+          SchedulerBinding.instance.platformDispatcher.platformBrightness;
+      _isDarkMode = brightness == Brightness.dark;
+      debugPrint('Error loading theme preference: $e');
     }
   }
 

@@ -29,15 +29,29 @@ class MyApp extends StatelessWidget {
           builder: (context, snapshot) {
             // Show a loading screen in the theme colors while waiting for the theme to load
             if (snapshot.connectionState != ConnectionState.done) {
-              // Use the default dark theme as fallback during loading
-              final defaultTheme = ThemeData.dark().copyWith(
-                scaffoldBackgroundColor: Colors.black,
-                colorScheme: ColorScheme.dark(
-                  primary: AppTheme.accentColor,
-                ),
-              );
+              // Get platform brightness to match system theme during loading
+              final Brightness platformBrightness =
+                  MediaQuery.platformBrightnessOf(context);
+              final bool isSystemDarkMode =
+                  platformBrightness == Brightness.dark;
+
+              // Use theme that matches system preference during loading
+              final loadingTheme = isSystemDarkMode
+                  ? ThemeData.dark().copyWith(
+                      scaffoldBackgroundColor: Colors.black,
+                      colorScheme: ColorScheme.dark(
+                        primary: AppTheme.accentColor,
+                      ),
+                    )
+                  : ThemeData.light().copyWith(
+                      scaffoldBackgroundColor: AppTheme.lightBackgroundColor,
+                      colorScheme: ColorScheme.light(
+                        primary: AppTheme.accentColor,
+                      ),
+                    );
+
               return MaterialApp(
-                theme: defaultTheme,
+                theme: loadingTheme,
                 home: const Scaffold(
                   body: Center(
                     child: CircularProgressIndicator(),
