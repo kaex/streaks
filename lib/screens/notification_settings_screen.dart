@@ -14,6 +14,7 @@ class NotificationSettingsScreen extends StatelessWidget {
     final notificationManager = Provider.of<NotificationManager>(context);
     final habitsProvider = Provider.of<HabitsProvider>(context);
     final habits = habitsProvider.habits;
+    final notificationService = NotificationService();
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBgColor =
@@ -58,38 +59,118 @@ class NotificationSettingsScreen extends StatelessWidget {
                         ),
                       ],
               ),
-              child: Column(
-                children: [
-                  SwitchListTile(
-                    title: Text(
-                      'Enable Notifications',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: textColor,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Turn off to disable all habit reminders',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: subtitleColor,
-                      ),
-                    ),
-                    value: notificationManager.notificationsEnabled,
-                    activeColor: AppTheme.accentColor,
-                    onChanged: (value) {
-                      notificationManager.setNotificationsEnabled(
-                          value, context);
-
-                      if (value) {
-                        // Reschedule all habit notifications without showing a snackbar
-                        _rescheduleAllNotifications(
-                            context, habitsProvider.habits);
-                      }
-                    },
+              child: SwitchListTile(
+                title: Text(
+                  'Enable Notifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
-                ],
+                ),
+                subtitle: Text(
+                  'Turn on to receive habit reminders',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: subtitleColor,
+                  ),
+                ),
+                value: notificationManager.notificationsEnabled,
+                onChanged: (value) {
+                  notificationManager.setNotificationsEnabled(value, context);
+                  if (value) {
+                    // If enabling, reschedule all notifications
+                    _rescheduleAllNotifications(context, habits);
+                  }
+                },
+                activeColor: AppTheme.accentColor,
+                contentPadding: const EdgeInsets.all(16),
+              ),
+            ),
+          ),
+
+          // Test notification button
+          if (notificationManager.notificationsEnabled)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isDarkMode
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Testing',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Send a test notification to check if your device is receiving notifications properly',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: subtitleColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Show a test notification
+                          await notificationService.showTestNotification();
+                          // Show a confirmation
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Test notification sent! Check your device.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child:
+                            const Center(child: Text('Send Test Notification')),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Section title
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, top: 24.0, bottom: 8.0),
+            child: Text(
+              'Habit Reminders',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
           ),

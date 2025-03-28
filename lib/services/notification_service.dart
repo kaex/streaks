@@ -275,4 +275,52 @@ class NotificationService {
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
   }
+
+  // Test a notification (will show immediately)
+  Future<void> showTestNotification() async {
+    debugPrint('Showing test notification...');
+
+    try {
+      // Create notification details
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'test_channel',
+        'Test Notifications',
+        channelDescription: 'Used for testing notifications',
+        importance: Importance.max,
+        priority: Priority.high,
+        enableLights: true,
+        enableVibration: true,
+        playSound: true,
+        color: Colors.purple,
+        ticker: 'test',
+        icon: 'notification_icon',
+      );
+
+      final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+          DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      // Show an immediate notification
+      await flutterLocalNotificationsPlugin.show(
+        0, // Use a fixed ID for test notifications
+        'Test Notification',
+        'This is a test notification from Streaks! If you see this, notifications are working correctly.',
+        platformChannelSpecifics,
+        payload: 'test_notification',
+      );
+
+      debugPrint('Test notification sent successfully');
+    } catch (e) {
+      debugPrint('Error showing test notification: $e');
+    }
+  }
 }
