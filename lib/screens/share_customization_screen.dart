@@ -3,6 +3,7 @@ import '../models/habit.dart';
 import '../theme/app_theme.dart';
 import '../utils/icon_utils.dart';
 import '../utils/share_utils.dart';
+import 'dart:math' as Math;
 
 class ShareCustomizationScreen extends StatefulWidget {
   final Habit habit;
@@ -29,6 +30,71 @@ class _ShareCustomizationScreenState extends State<ShareCustomizationScreen> {
   void initState() {
     super.initState();
     _selectedColor = widget.habit.color;
+
+    // Make sure we're using a color from our grid
+    _selectedColor = _findClosestColor(_selectedColor);
+  }
+
+  // Find the closest color in our color grid to the provided color
+  Color _findClosestColor(Color targetColor) {
+    // Define colors similar to those in the color grid
+    final colors = _getColorPalette();
+
+    // If the color is already in our grid, use it
+    for (final color in colors) {
+      if (color.value == targetColor.value) {
+        return color;
+      }
+    }
+
+    // Otherwise find the closest match
+    double minDistance = double.infinity;
+    Color closestColor = colors.first;
+
+    for (final color in colors) {
+      double distance = _colorDistance(color, targetColor);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestColor = color;
+      }
+    }
+
+    return closestColor;
+  }
+
+  // Calculate distance between two colors (RGB distance formula)
+  double _colorDistance(Color a, Color b) {
+    double rDiff = (a.red - b.red).toDouble();
+    double gDiff = (a.green - b.green).toDouble();
+    double bDiff = (a.blue - b.blue).toDouble();
+    return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+  }
+
+  // Get the color palette used in the grid
+  List<Color> _getColorPalette() {
+    return [
+      const Color(0xFFF76C6C), // Red
+      const Color(0xFFFF9E7D), // Orange
+      const Color(0xFFFFD166), // Yellow
+      const Color(0xFFF4E04D), // Light Yellow
+      const Color(0xFFB8E986), // Light Green
+      const Color(0xFF06D6A0), // Teal
+      const Color(0xFF4FC1E9), // Light Blue
+      const Color(0xFF5E81F4), // Blue
+      const Color(0xFF8A2BE2), // Purple
+      const Color(0xFFD264B6), // Pink
+      const Color(0xFFFF7E79), // Coral
+      const Color(0xFF7F8C8D), // Gray
+      const Color(0xFF95A5A6), // Light Gray
+      const Color(0xFFBDC3C7), // Silver
+      const Color(0xFFFF66FF), // Bright Pink
+      const Color(0xFFFF5A84), // Hot Pink
+      const Color(0xFFFF6B6B), // Light Red
+      const Color(0xFF9EB0B8), // Slate
+      const Color(0xFF8795A1), // Medium Gray
+      const Color(0xFF718096), // Dark Gray
+      const Color(0xFFA0AEC0), // Cool Gray
+    ];
   }
 
   @override
@@ -319,32 +385,8 @@ class _ShareCustomizationScreenState extends State<ShareCustomizationScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isDarkMode ? Colors.white : Colors.black;
 
-    // Define colors similar to those in the screenshot
-    final colors = [
-      const Color(0xFFF76C6C), // Red
-      const Color(0xFFFF9E7D), // Orange
-      const Color(0xFFFFD166), // Yellow
-      const Color(0xFFF4E04D), // Light Yellow
-      const Color(0xFFB8E986), // Light Green
-      const Color(0xFF06D6A0), // Teal
-      const Color(0xFF4FC1E9), // Light Blue
-
-      const Color(0xFF5E81F4), // Blue
-      const Color(0xFF8A2BE2), // Purple
-      const Color(0xFFD264B6), // Pink
-      const Color(0xFFFF7E79), // Coral
-      const Color(0xFF7F8C8D), // Gray
-      const Color(0xFF95A5A6), // Light Gray
-      const Color(0xFFBDC3C7), // Silver
-
-      const Color(0xFFFF66FF), // Bright Pink
-      const Color(0xFFFF5A84), // Hot Pink
-      const Color(0xFFFF6B6B), // Light Red
-      const Color(0xFF9EB0B8), // Slate
-      const Color(0xFF8795A1), // Medium Gray
-      const Color(0xFF718096), // Dark Gray
-      const Color(0xFFA0AEC0), // Cool Gray
-    ];
+    // Use the common color palette
+    final colors = _getColorPalette();
 
     return Wrap(
       spacing: 10,
