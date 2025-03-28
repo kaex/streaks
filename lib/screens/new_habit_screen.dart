@@ -127,9 +127,9 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      floatingActionButton: Container(
-        height: 60,
-        width: 200,
+      floatingActionButton: SizedBox(
+        height: 50,
+        width: 300,
         child: FloatingActionButton.extended(
           onPressed: _saveHabit,
           backgroundColor: AppTheme.accentColor,
@@ -355,7 +355,6 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 40),
                   ],
                 ),
               ),
