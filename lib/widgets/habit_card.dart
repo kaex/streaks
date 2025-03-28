@@ -216,42 +216,107 @@ class HabitCard extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: backgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        return Container(
+          padding: const EdgeInsets.only(top: 12, bottom: 24),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (onEdit != null)
-                  ListTile(
-                    leading: Icon(Icons.edit,
-                        color: isDarkMode ? Colors.white : Colors.grey[800]),
-                    title:
-                        Text('Edit Habit', style: TextStyle(color: textColor)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      onEdit!(habit.id);
-                    },
+                // Bottom sheet handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                if (onDelete != null)
-                  ListTile(
-                    leading: Icon(Icons.delete, color: Colors.red),
-                    title: Text('Delete', style: TextStyle(color: Colors.red)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      onDelete!(habit.id);
-                    },
+                ),
+
+                // Option buttons
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      if (onEdit != null)
+                        _buildOptionButton(
+                          context: context,
+                          icon: Icons.edit_outlined,
+                          label: 'Edit',
+                          color: Colors.blue,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onEdit!(habit.id);
+                          },
+                        ),
+                      if (onDelete != null)
+                        _buildOptionButton(
+                          context: context,
+                          icon: Icons.delete_outline,
+                          label: 'Delete',
+                          color: Colors.red,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onDelete!(habit.id);
+                          },
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildOptionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? const Color(0xFF252525)
+                  : const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
