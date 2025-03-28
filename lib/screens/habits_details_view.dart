@@ -573,7 +573,7 @@ class HabitsDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Container(
-                      width: 36,
+                      width: 48,
                       height: 36,
                       decoration: BoxDecoration(
                         color: AppTheme.accentColor.withOpacity(0.2),
@@ -633,7 +633,7 @@ class HabitsDetailsView extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  width: 36,
+                  width: 48,
                   height: 36,
                   decoration: BoxDecoration(
                     color: AppTheme.accentColor.withOpacity(0.2),
