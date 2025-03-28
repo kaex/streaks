@@ -51,7 +51,7 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         // Handle notification taps
-        debugPrint('Notification response received: ${response.payload}');
+        debugPrint('Notification triggered: ${response.payload}');
       },
     );
   }
