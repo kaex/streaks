@@ -607,41 +607,30 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      final habit = Habit(
+        id: _isEditing ? _existingHabit!.id : null,
+        title: _title,
+        description: _description,
+        startDate: _startDate,
+        reminderDays: _reminderDays,
+        reminderTime: _reminderTime,
+        interval: _interval,
+        color: _selectedColor,
+        iconName: _selectedIconName,
+        streakGoal: _streakGoal,
+        categories: _selectedCategories.isNotEmpty
+            ? _selectedCategories.toList()
+            : null,
+        completionDates: _isEditing ? _existingHabit!.completionDates : null,
+      );
+
       final habitsProvider =
           Provider.of<HabitsProvider>(context, listen: false);
 
-      if (_isEditing && _existingHabit != null) {
-        // Update existing habit
-        final updatedHabit = _existingHabit!.copyWith(
-          title: _title,
-          description: _description,
-          startDate: _startDate,
-          reminderDays: _reminderDays,
-          reminderTime: _reminderTime,
-          interval: _interval,
-          color: _selectedColor,
-          iconName: _selectedIconName,
-          streakGoal: _streakGoal,
-          categories: _selectedCategories.toList(),
-        );
-
-        habitsProvider.updateHabit(updatedHabit);
+      if (_isEditing) {
+        habitsProvider.updateHabit(habit, context: context);
       } else {
-        // Create new habit
-        final habit = Habit(
-          title: _title,
-          description: _description,
-          startDate: _startDate,
-          reminderDays: _reminderDays,
-          reminderTime: _reminderTime,
-          interval: _interval,
-          color: _selectedColor,
-          iconName: _selectedIconName,
-          streakGoal: _streakGoal,
-          categories: _selectedCategories.toList(),
-        );
-
-        habitsProvider.addHabit(habit);
+        habitsProvider.addHabit(habit, context: context);
       }
 
       Navigator.pop(context);

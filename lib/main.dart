@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'models/habits_provider.dart';
 import 'models/theme_provider.dart';
+import 'models/notification_manager.dart';
 import 'screens/habits_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => HabitsProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationManager()),
       ],
       child: Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
         return FutureBuilder<void>(

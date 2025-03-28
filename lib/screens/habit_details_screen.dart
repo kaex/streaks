@@ -446,7 +446,7 @@ class HabitDetailsScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                habitsProvider.deleteHabit(habitId);
+                habitsProvider.deleteHabit(habitId, context: context);
                 Navigator.pop(context); // Close dialog
                 Navigator.pop(context); // Go back to habits list
               },

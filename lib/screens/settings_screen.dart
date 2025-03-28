@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../models/theme_provider.dart';
+import '../models/notification_manager.dart';
 import '../utils/webview_utils.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -18,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final notificationManager = Provider.of<NotificationManager>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,8 +52,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.notifications,
             title: 'Notifications',
             subtitle: 'Manage reminder notifications',
+            trailing: Switch(
+              value: notificationManager.notificationsEnabled,
+              activeColor: AppTheme.accentColor,
+              onChanged: (value) {
+                notificationManager.setNotificationsEnabled(value);
+              },
+            ),
             onTap: () {
-              _showComingSoonDialog('Notification Settings');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationSettingsScreen(),
+                ),
+              );
             },
           ),
 

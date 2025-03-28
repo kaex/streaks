@@ -56,6 +56,10 @@ dependencies:
   share_plus: ^7.2.1
   webview_flutter: ^4.5.0
 
+  # Notifications
+  flutter_local_notifications: ^17.0.0
+  timezone: ^0.9.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

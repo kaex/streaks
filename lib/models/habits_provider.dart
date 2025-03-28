@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'habit.dart';
+import 'notification_manager.dart';
 
 class HabitsProvider with ChangeNotifier {
   List<Habit> _habits = [];
@@ -45,25 +46,46 @@ class HabitsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addHabit(Habit habit) async {
+  Future<void> addHabit(Habit habit, {BuildContext? context}) async {
     _habits.add(habit);
     notifyListeners();
     await _saveHabits();
+
+    // Schedule notification if context is provided
+    if (context != null) {
+      final notificationManager =
+          Provider.of<NotificationManager>(context, listen: false);
+      await notificationManager.updateHabitNotifications(habit);
+    }
   }
 
-  Future<void> updateHabit(Habit updatedHabit) async {
+  Future<void> updateHabit(Habit updatedHabit, {BuildContext? context}) async {
     final index = _habits.indexWhere((habit) => habit.id == updatedHabit.id);
     if (index != -1) {
       _habits[index] = updatedHabit;
       notifyListeners();
       await _saveHabits();
+
+      // Update notification if context is provided
+      if (context != null) {
+        final notificationManager =
+            Provider.of<NotificationManager>(context, listen: false);
+        await notificationManager.updateHabitNotifications(updatedHabit);
+      }
     }
   }
 
-  Future<void> deleteHabit(String habitId) async {
+  Future<void> deleteHabit(String habitId, {BuildContext? context}) async {
     _habits.removeWhere((habit) => habit.id == habitId);
     notifyListeners();
     await _saveHabits();
+
+    // Remove notifications if context is provided
+    if (context != null) {
+      final notificationManager =
+          Provider.of<NotificationManager>(context, listen: false);
+      await notificationManager.removeHabitNotifications(habitId);
+    }
   }
 
   Future<void> toggleHabitCompletion(String habitId) async {
