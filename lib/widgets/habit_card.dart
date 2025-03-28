@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models/habit.dart';
 import '../utils/icon_utils.dart';
 import '../theme/app_theme.dart';
@@ -41,137 +40,107 @@ class HabitCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: Slidable(
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            if (onEdit != null)
-              SlidableAction(
-                onPressed: (_) => onEdit!(habit.id),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                icon: Icons.edit,
-                label: 'Edit',
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                ),
-              ),
-            if (onDelete != null)
-              SlidableAction(
-                onPressed: (_) => onDelete!(habit.id),
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                icon: Icons.delete,
-                label: 'Delete',
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-          ],
-        ),
-        child: GestureDetector(
-          onTap: () => onTap(habit.id),
-          child: Container(
-            decoration: BoxDecoration(
-              color: cardBackgroundColor,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: !isDarkMode
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      // Habit Icon (square with rounded corners like HabitKit)
-                      Container(
-                        height: 60,
-                        width: 60,
+      child: GestureDetector(
+        onTap: () => onTap(habit.id),
+        onLongPress: () => _showOptionsBottomSheet(context),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cardBackgroundColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: !isDarkMode
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    // Habit Icon (square with rounded corners like HabitKit)
+                    Container(
+                      height: 60,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: iconBackgroundColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        IconUtils.getIconData(habit.iconName),
+                        color: habit.color,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Habit Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            habit.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            habit.description.isNotEmpty
+                                ? habit.description
+                                : "Read for 15 minutes",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: subtitleColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Completion Button (square with rounded corners like HabitKit)
+                    GestureDetector(
+                      onTap: () => onToggleCompletion(habit.id),
+                      child: Container(
+                        height: 48,
+                        width: 48,
                         decoration: BoxDecoration(
-                          color: iconBackgroundColor,
+                          color: isCompleted
+                              ? habit.color
+                              : completionDefaultColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(
-                          IconUtils.getIconData(habit.iconName),
-                          color: habit.color,
-                          size: 30,
-                        ),
+                        child: isCompleted
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              )
+                            : null,
                       ),
-                      const SizedBox(width: 16),
-
-                      // Habit Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              habit.title,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              habit.description.isNotEmpty
-                                  ? habit.description
-                                  : "Read for 15 minutes",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: subtitleColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Completion Button (square with rounded corners like HabitKit)
-                      GestureDetector(
-                        onTap: () => onToggleCompletion(habit.id),
-                        child: Container(
-                          height: 48,
-                          width: 48,
-                          decoration: BoxDecoration(
-                            color: isCompleted
-                                ? habit.color
-                                : completionDefaultColor,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: isCompleted
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 28,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                // Streak Grid
-                Padding(
-                  padding: const EdgeInsets.only(
-                      left: 16.0, right: 16.0, bottom: 16.0),
-                  child: _buildStreakGrid(
-                      habit, streakEmptyColor, streakBorderColor),
-                ),
-              ],
-            ),
+              // Streak Grid
+              Padding(
+                padding: const EdgeInsets.only(
+                    left: 16.0, right: 16.0, bottom: 16.0),
+                child: _buildStreakGrid(
+                    habit, streakEmptyColor, streakBorderColor),
+              ),
+            ],
           ),
         ),
       ),
@@ -237,6 +206,52 @@ class HabitCard extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  void _showOptionsBottomSheet(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onEdit != null)
+                  ListTile(
+                    leading: Icon(Icons.edit,
+                        color: isDarkMode ? Colors.white : Colors.grey[800]),
+                    title:
+                        Text('Edit Habit', style: TextStyle(color: textColor)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onEdit!(habit.id);
+                    },
+                  ),
+                if (onDelete != null)
+                  ListTile(
+                    leading: Icon(Icons.delete, color: Colors.red),
+                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onDelete!(habit.id);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
