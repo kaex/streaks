@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../utils/icon_utils.dart';
 import '../widgets/color_picker.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/animated_button.dart';
 import 'interval_selection_screen.dart';
 import 'reminder_selection_screen.dart';
 import '../widgets/category_chip.dart';
@@ -131,20 +132,13 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
       floatingActionButton: SizedBox(
         height: 50,
         width: 300,
-        child: FloatingActionButton.extended(
-          onPressed: _saveHabit,
+        child: AnimatedTextButton(
+          text: _isEditing ? 'Save Changes' : 'Save',
+          onTap: _saveHabit,
           backgroundColor: AppTheme.accentColor,
-          label: Text(
-            _isEditing ? 'Save Changes' : 'Save',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
+          fullWidth: true,
+          icon: Icons.check,
+          fontSize: 18,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

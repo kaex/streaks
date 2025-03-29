@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/habit.dart';
 import '../utils/icon_utils.dart';
 import '../theme/app_theme.dart';
@@ -40,109 +41,105 @@ class HabitCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: GestureDetector(
-        onTap: () => onTap(habit.id),
-        onLongPress: () => _showOptionsBottomSheet(context),
-        child: Container(
-          decoration: BoxDecoration(
-            color: cardBackgroundColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: !isDarkMode
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : null,
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    // Habit Icon (square with rounded corners like HabitKit)
-                    Container(
-                      height: 60,
-                      width: 60,
-                      decoration: BoxDecoration(
-                        color: iconBackgroundColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        IconUtils.getIconData(habit.iconName),
-                        color: habit.color,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Habit Details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            habit.title,
-                            style: TextStyle(
-                              fontSize: habit.description.isEmpty ? 20 : 18,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                          if (habit.description.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              habit.description,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: subtitleColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ] else
-                            const SizedBox(
-                                height: 2), // Small padding when no description
-                        ],
-                      ),
-                    ),
-
-                    // Completion Button (square with rounded corners like HabitKit)
-                    GestureDetector(
-                      onTap: () => onToggleCompletion(habit.id),
-                      child: Container(
-                        height: 48,
-                        width: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(habit.id),
+          onLongPress: () => _showOptionsBottomSheet(context),
+          borderRadius: BorderRadius.circular(20),
+          splashColor: habit.color.withOpacity(0.1),
+          highlightColor: habit.color.withOpacity(0.05),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: cardBackgroundColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: !isDarkMode
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      // Habit Icon (square with rounded corners like HabitKit)
+                      Container(
+                        height: 60,
+                        width: 60,
                         decoration: BoxDecoration(
-                          color: isCompleted
-                              ? habit.color
-                              : completionDefaultColor,
+                          color: iconBackgroundColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: isCompleted
-                            ? const Icon(
-                                Icons.check_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              )
-                            : null,
+                        child: Icon(
+                          IconUtils.getIconData(habit.iconName),
+                          color: habit.color,
+                          size: 30,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      const SizedBox(width: 16),
 
-              // Streak Grid
-              Padding(
-                padding: const EdgeInsets.only(
-                    left: 16.0, right: 16.0, bottom: 16.0),
-                child: _buildStreakGrid(
-                    habit, streakEmptyColor, streakBorderColor),
-              ),
-            ],
+                      // Habit Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              habit.title,
+                              style: TextStyle(
+                                fontSize: habit.description.isEmpty ? 20 : 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            if (habit.description.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                habit.description,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: subtitleColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ] else
+                              const SizedBox(
+                                  height:
+                                      2), // Small padding when no description
+                          ],
+                        ),
+                      ),
+
+                      // Completion Button (with animations)
+                      CompletionButton(
+                        isCompleted: isCompleted,
+                        color: habit.color,
+                        defaultColor: completionDefaultColor,
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          onToggleCompletion(habit.id);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Streak Grid
+                Padding(
+                  padding: const EdgeInsets.only(
+                      left: 16.0, right: 16.0, bottom: 16.0),
+                  child: _buildStreakGrid(
+                      habit, streakEmptyColor, streakBorderColor),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -318,6 +315,129 @@ class HabitCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Animated completion button widget
+class CompletionButton extends StatefulWidget {
+  final bool isCompleted;
+  final Color color;
+  final Color defaultColor;
+  final VoidCallback onTap;
+
+  const CompletionButton({
+    super.key,
+    required this.isCompleted,
+    required this.color,
+    required this.defaultColor,
+    required this.onTap,
+  });
+
+  @override
+  State<CompletionButton> createState() => _CompletionButtonState();
+}
+
+class _CompletionButtonState extends State<CompletionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _checkAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    if (widget.isCompleted) {
+      _animationController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(CompletionButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isCompleted != oldWidget.isCompleted) {
+      if (widget.isCompleted) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        widget.onTap();
+        if (!widget.isCompleted) {
+          // Only animate if going from uncompleted to completed
+          // Otherwise, the animation will be handled in didUpdateWidget
+          _animationController.forward();
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: 1.0 - (_scaleAnimation.value * 0.1), // Subtle scale effect
+            child: Container(
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: widget.isCompleted ? widget.color : widget.defaultColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: widget.isCompleted
+                    ? [
+                        BoxShadow(
+                          color: widget.color.withOpacity(0.4),
+                          blurRadius: 10 * _checkAnimation.value,
+                          spreadRadius: 1 * _checkAnimation.value,
+                        )
+                      ]
+                    : null,
+              ),
+              child: widget.isCompleted
+                  ? Center(
+                      child: Transform.scale(
+                        scale: _checkAnimation.value,
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          );
+        },
       ),
     );
   }
