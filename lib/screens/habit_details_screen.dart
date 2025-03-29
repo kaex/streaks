@@ -143,21 +143,23 @@ class HabitDetailsScreen extends StatelessWidget {
                                 Text(
                                   habit.title,
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize:
+                                        habit.description.isEmpty ? 24 : 20,
                                     fontWeight: FontWeight.bold,
                                     color: textColor,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  habit.description.isNotEmpty
-                                      ? habit.description
-                                      : "Read for 15 minutes",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: subtitleColor,
+                                if (habit.description.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    habit.description,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: subtitleColor,
+                                    ),
                                   ),
-                                ),
+                                ] else
+                                  const SizedBox(height: 2),
                               ],
                             ),
                           ),

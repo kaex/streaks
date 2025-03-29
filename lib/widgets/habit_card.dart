@@ -87,23 +87,25 @@ class HabitCard extends StatelessWidget {
                           Text(
                             habit.title,
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: habit.description.isEmpty ? 20 : 18,
                               fontWeight: FontWeight.bold,
                               color: textColor,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            habit.description.isNotEmpty
-                                ? habit.description
-                                : "Read for 15 minutes",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: subtitleColor,
+                          if (habit.description.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              habit.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: subtitleColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ] else
+                            const SizedBox(
+                                height: 2), // Small padding when no description
                         ],
                       ),
                     ),

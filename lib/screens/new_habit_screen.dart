@@ -212,7 +212,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
                       ),
                       maxLines: 3,
                       onSaved: (value) {
-                        _description = value ?? '';
+                        _description = value?.trim() ?? '';
                       },
                     ),
                     const SizedBox(height: 24),

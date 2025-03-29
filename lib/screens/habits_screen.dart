@@ -147,34 +147,94 @@ class _HabitsScreenState extends State<HabitsScreen> {
   }
 
   void _showPremiumDialog(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final dialogBgColor =
+        isDarkMode ? AppTheme.cardColor : AppTheme.lightCardColor;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Upgrade to Premium'),
-        content: const Text(
-          'Free users can only create 3 habits. Upgrade to premium for unlimited habits and to remove ads.',
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigate to premium screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PremiumScreen(),
+        backgroundColor: dialogBgColor,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Dialog content
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              width: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                      height: 20), // Add space at the top for the X button
+                  const Text(
+                    'Upgrade to Premium',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Free users can only create 3 habits. Upgrade to premium for unlimited habits and to remove ads.',
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // Navigate to premium screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PremiumScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentColor,
+                      minimumSize: const Size(double.infinity, 45),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Upgrade Now',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Close button positioned at top-left
+            Positioned(
+              left: 12,
+              top: 12,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.black26
+                        : Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
                 ),
-              );
-            },
-            child: const Text('Upgrade Now'),
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
