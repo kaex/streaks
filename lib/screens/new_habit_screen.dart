@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 import '../models/habit.dart';
 import '../models/habits_provider.dart';
 import '../theme/app_theme.dart';
@@ -48,7 +49,7 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
     _reminderDays = List.filled(7, false);
     _reminderTime = null;
     _interval = 'daily';
-    _selectedColor = AppTheme.themeColors[4]; // Default to red
+    _selectedColor = _getRandomColor(); // Choose a random color
     _selectedIconName = 'book';
     _streakGoal = 1;
     _selectedCategories = {};
@@ -710,5 +711,12 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
         _reminderTime = result['time'];
       });
     }
+  }
+
+  // Get a random color from the theme colors
+  Color _getRandomColor() {
+    final random = Random();
+    final colorsList = AppTheme.themeColors;
+    return colorsList[random.nextInt(colorsList.length)];
   }
 }
