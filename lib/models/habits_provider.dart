@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'habit.dart';
 import 'notification_manager.dart';
+import 'premium_provider.dart';
 
 class HabitsProvider with ChangeNotifier {
   List<Habit> _habits = [];
@@ -46,7 +47,25 @@ class HabitsProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> canAddHabit(BuildContext context) async {
+    final premiumProvider =
+        Provider.of<PremiumProvider>(context, listen: false);
+    return premiumProvider.canAddMoreHabits(_habits.length);
+  }
+
   Future<void> addHabit(Habit habit, {BuildContext? context}) async {
+    if (context != null) {
+      final premiumProvider =
+          Provider.of<PremiumProvider>(context, listen: false);
+
+      // Check if user can add more habits
+      if (!premiumProvider.canAddMoreHabits(_habits.length)) {
+        // Cannot add more habits as a free user
+        throw Exception(
+            'Free users can only create ${premiumProvider.freeHabitLimit} habits. Upgrade to premium for unlimited habits.');
+      }
+    }
+
     _habits.add(habit);
     notifyListeners();
     await _saveHabits();

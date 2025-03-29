@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import '../models/habits_provider.dart';
+import '../models/premium_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/category_chip.dart';
+import '../services/ad_service.dart';
 import 'habit_details_screen.dart';
 import 'new_habit_screen.dart';
 import 'habits_list_view.dart';
 import 'habits_details_view.dart';
 import 'settings_screen.dart';
+import 'premium_screen.dart';
 
 class HabitsScreen extends StatefulWidget {
   const HabitsScreen({super.key});
@@ -26,6 +29,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor =
         isDarkMode ? const Color(0xFF151515) : const Color(0xFFEEEEEE);
+    final premiumProvider = Provider.of<PremiumProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -74,20 +78,45 @@ class _HabitsScreenState extends State<HabitsScreen> {
               height: 46,
               child: IconButton(
                 icon: const Icon(Icons.add),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NewHabitScreen(),
-                    ),
-                  );
+                onPressed: () async {
+                  final habitsProvider =
+                      Provider.of<HabitsProvider>(context, listen: false);
+
+                  try {
+                    // Check if user can add more habits
+                    if (await habitsProvider.canAddHabit(context)) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NewHabitScreen(),
+                        ),
+                      );
+                    } else {
+                      // Show premium upgrade dialog
+                      _showPremiumDialog(context);
+                    }
+                  } catch (e) {
+                    print('Error checking if user can add habit: $e');
+                    // Show premium upgrade dialog on error
+                    _showPremiumDialog(context);
+                  }
                 },
               ),
             ),
           ),
         ],
       ),
-      body: _getScreenForIndex(_selectedNavIndex),
+      body: Column(
+        children: [
+          // Main content area that takes most of the space
+          Expanded(
+            child: _getScreenForIndex(_selectedNavIndex),
+          ),
+
+          // Ad banner at the bottom (only for free users)
+          if (!premiumProvider.isPremium) AdService.showBannerAd(context),
+        ],
+      ),
       // Functional bottom navigation bar
       bottomNavigationBar: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -113,6 +142,39 @@ class _HabitsScreenState extends State<HabitsScreen> {
             _buildNavItem(Icons.format_align_left, 2),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showPremiumDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Upgrade to Premium'),
+        content: const Text(
+          'Free users can only create 3 habits. Upgrade to premium for unlimited habits and to remove ads.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to premium screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PremiumScreen(),
+                ),
+              );
+            },
+            child: const Text('Upgrade Now'),
+          ),
+        ],
       ),
     );
   }

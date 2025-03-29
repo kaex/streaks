@@ -61,6 +61,10 @@ dependencies:
   flutter_timezone: ^4.1.0
   timezone: ^0.9.4
 
+  # Premium features
+  google_mobile_ads: ^4.0.0  # For banner ads
+  in_app_purchase: ^3.1.13   # For in-app purchases
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

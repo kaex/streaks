@@ -4,12 +4,18 @@ import 'package:share_plus/share_plus.dart';
 import 'models/habits_provider.dart';
 import 'models/theme_provider.dart';
 import 'models/notification_manager.dart';
+import 'models/premium_provider.dart';
+import 'services/ad_service.dart';
 import 'screens/habits_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize ad service
+  await AdService().initialize();
+
   runApp(const MyApp());
 }
 
@@ -23,6 +29,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => HabitsProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => NotificationManager()),
+        ChangeNotifierProvider(create: (context) => PremiumProvider()),
       ],
       child: Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
         return FutureBuilder<void>(

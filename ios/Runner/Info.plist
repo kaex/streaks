@@ -51,5 +51,17 @@
 	<string>Streaks needs calendar access to schedule habit reminders.</string>
 	<key>NSNotificationsUsageDescription</key>
 	<string>Streaks would like to send you notifications to remind you about your habits.</string>
+
+	<!-- Google AdMob app ID -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-8036540167045476~3772723463</string>
+	<!-- For iOS 14+ -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

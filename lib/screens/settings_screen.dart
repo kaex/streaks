@@ -4,8 +4,10 @@ import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../models/theme_provider.dart';
 import '../models/notification_manager.dart';
+import '../models/premium_provider.dart';
 import '../utils/webview_utils.dart';
 import 'notification_settings_screen.dart';
+import 'premium_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -21,6 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final notificationManager = Provider.of<NotificationManager>(context);
+    final premiumProvider = Provider.of<PremiumProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,6 +36,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           const SizedBox(height: 16),
+
+          // Premium Status Banner
+          if (premiumProvider.isPremium)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple.shade300, Colors.purple.shade700],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.stars,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Premium User',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Thank you for supporting Streaks!',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Premium Option (for non-premium users)
+          if (!premiumProvider.isPremium)
+            _buildSettingItem(
+              icon: Icons.stars,
+              title: 'Upgrade to Premium',
+              subtitle: 'Unlock unlimited habits and remove ads',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PremiumScreen(),
+                  ),
+                );
+              },
+            ),
 
           // App Settings Section
           _buildSectionHeader('App Settings'),

@@ -23,6 +23,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- AdMob app ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8036540167045476~3772723463"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
