@@ -42,6 +42,8 @@ class AppTheme {
     return ThemeData.dark().copyWith(
       scaffoldBackgroundColor: backgroundColor,
       primaryColor: accentColor,
+      canvasColor:
+          backgroundColor, // Ensure dropdowns and other canvas elements are also black
       appBarTheme: const AppBarTheme(
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -52,6 +54,19 @@ class AppTheme {
           fontWeight: FontWeight.bold,
         ),
         iconTheme: IconThemeData(color: textColor),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: backgroundColor, // Ensure popup menus are black
+      ),
+      bannerTheme: const MaterialBannerThemeData(
+        backgroundColor: backgroundColor,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: backgroundColor, // Ensure bottom sheets are black
+        modalBackgroundColor: backgroundColor, // For modal bottom sheets
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: backgroundColor, // For drawer background
       ),
       textTheme: GoogleFonts.interTextTheme(
         ThemeData.dark().textTheme.copyWith(

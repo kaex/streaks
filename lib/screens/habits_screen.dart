@@ -29,124 +29,132 @@ class _HabitsScreenState extends State<HabitsScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor =
-        isDarkMode ? const Color(0xFF151515) : const Color(0xFFEEEEEE);
+        isDarkMode ? Colors.black : AppTheme.lightBackgroundColor;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final accentColor = AppTheme.accentColor;
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     final premiumService = Provider.of<PremiumService>(context);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        centerTitle: false,
-        title: Text(
-          'Habits',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : Colors.black,
-          ),
-        ),
-        actions: [
-          // Settings button
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              width: 46,
-              height: 46,
-              child: IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/settings');
-                },
+    return Consumer<PremiumService>(
+      builder: (context, premiumService, _) {
+        return Scaffold(
+          backgroundColor: backgroundColor,
+          appBar: AppBar(
+            backgroundColor: backgroundColor,
+            scrolledUnderElevation: 0,
+            elevation: 0,
+            centerTitle: false,
+            title: Text(
+              'Habits',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
-          ),
-          // Add button
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              width: 46,
-              height: 46,
-              child: IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () async {
-                  final habitsProvider =
-                      Provider.of<HabitsProvider>(context, listen: false);
-
-                  try {
-                    // Check if user can add more habits
-                    if (await habitsProvider.canAddHabit(context)) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NewHabitScreen(),
-                        ),
-                      );
-                    } else {
-                      // Show premium upgrade dialog
-                      _showPremiumDialog(context);
-                    }
-                  } catch (e) {
-                    print('Error checking if user can add habit: $e');
-                    // Show premium upgrade dialog on error
-                    _showPremiumDialog(context);
-                  }
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Main content area that takes most of the space
-          Expanded(
-            child: RepaintBoundary(
-              child: _getScreenForIndex(_selectedNavIndex),
-            ),
-          ),
-
-          // Ad banner at the bottom (only for free users)
-          if (!premiumService.isPremium) AdService.showBannerAd(context),
-        ],
-      ),
-      // Functional bottom navigation bar
-      bottomNavigationBar: RepaintBoundary(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              if (!isDarkMode)
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+            actions: [
+              // Settings button
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  width: 46,
+                  height: 46,
+                  child: IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/settings');
+                    },
+                  ),
                 ),
+              ),
+              // Add button
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  width: 46,
+                  height: 46,
+                  child: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () async {
+                      final habitsProvider =
+                          Provider.of<HabitsProvider>(context, listen: false);
+
+                      try {
+                        // Check if user can add more habits
+                        if (await habitsProvider.canAddHabit(context)) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NewHabitScreen(),
+                            ),
+                          );
+                        } else {
+                          // Show premium upgrade dialog
+                          _showPremiumDialog(context);
+                        }
+                      } catch (e) {
+                        print('Error checking if user can add habit: $e');
+                        // Show premium upgrade dialog on error
+                        _showPremiumDialog(context);
+                      }
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          body: Column(
             children: [
-              _buildNavItem(Icons.grid_view, 0),
-              _buildNavItem(Icons.format_list_bulleted, 1),
-              _buildNavItem(Icons.format_align_left, 2),
+              // Main content area that takes most of the space
+              Expanded(
+                child: RepaintBoundary(
+                  child: _getScreenForIndex(_selectedNavIndex),
+                ),
+              ),
+
+              // Ad banner at the bottom (only for free users)
+              if (!premiumService.isPremium) AdService.showBannerAd(context),
             ],
           ),
-        ),
-      ),
+          // Functional bottom navigation bar
+          bottomNavigationBar: RepaintBoundary(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.black : Colors.white,
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  if (!isDarkMode)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                ],
+              ),
+              height: 60,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(Icons.grid_view, 0),
+                  _buildNavItem(Icons.format_list_bulleted, 1),
+                  _buildNavItem(Icons.format_align_left, 2),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
