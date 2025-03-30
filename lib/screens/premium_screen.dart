@@ -216,43 +216,31 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   List<Widget> _buildFeatures() {
-    final features = PremiumService.premiumFeatures.entries.map((entry) {
-      IconData icon;
-      switch (entry.key) {
-        case 'unlimited_habits':
-          icon = Icons.check_circle_outline;
-          break;
-        case 'ad_free_experience':
-          icon = Icons.block;
-          break;
-        case 'advanced_statistics':
-          icon = Icons.insights;
-          break;
-        case 'custom_themes':
-          icon = Icons.palette;
-          break;
-        default:
-          icon = Icons.star;
-      }
+    final features = [
+      {
+        'icon': Icons.check_circle_outline,
+        'title': 'Unlimited Habits',
+        'description': 'Create as many habits as you need',
+      },
+      {
+        'icon': Icons.block,
+        'title': 'No Advertisements',
+        'description': 'Enjoy a clean, distraction-free experience',
+      },
+      {
+        'icon': Icons.favorite_outline,
+        'title': 'Support Development',
+        'description': 'Help us continue improving Streaks',
+      },
+    ];
 
-      return _buildFeatureItem(
-        icon: icon,
-        title: entry.key
-            .split('_')
-            .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
-            .join(' '),
-        description: entry.value,
-      );
-    }).toList();
-
-    // Add support development feature
-    features.add(_buildFeatureItem(
-      icon: Icons.favorite_outline,
-      title: 'Support Development',
-      description: 'Help us continue improving the app',
-    ));
-
-    return features;
+    return features
+        .map((feature) => _buildFeatureItem(
+              icon: feature['icon'] as IconData,
+              title: feature['title'] as String,
+              description: feature['description'] as String,
+            ))
+        .toList();
   }
 
   Widget _buildFeatureItem({
