@@ -35,6 +35,14 @@ class _AnimatedButtonState extends State<AnimatedButton>
   late Animation<double> _scaleAnimation;
   bool _isPressed = false;
 
+  // Precalculated shadow
+  final BoxShadow _pressedShadow = const BoxShadow(
+    color: Color(0x66000000),
+    blurRadius: 5,
+    spreadRadius: 1,
+    offset: Offset(0, 2),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -81,50 +89,43 @@ class _AnimatedButtonState extends State<AnimatedButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final backgroundColor = widget.backgroundColor ?? theme.primaryColor;
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            if (widget.enableHapticFeedback) {
-              HapticFeedback.mediumImpact();
-            }
-            widget.onTap();
-          },
-          onTapDown: _handleTapDown,
-          onTapUp: _handleTapUp,
-          onTapCancel: _handleTapCancel,
-          borderRadius: widget.borderRadius,
-          splashColor:
-              widget.splashColor ?? theme.primaryColor.withOpacity(0.1),
-          highlightColor:
-              widget.highlightColor ?? theme.primaryColor.withOpacity(0.05),
-          child: Ink(
-            padding: widget.padding,
-            decoration: BoxDecoration(
-              color: widget.backgroundColor ?? theme.primaryColor,
-              borderRadius: widget.borderRadius,
-              boxShadow: _isPressed
-                  ? [
-                      BoxShadow(
-                        color: (widget.backgroundColor ?? theme.primaryColor)
-                            .withOpacity(0.4),
-                        blurRadius: 5,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 2),
-                      )
-                    ]
-                  : null,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          );
+        },
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (widget.enableHapticFeedback) {
+                HapticFeedback.mediumImpact();
+              }
+              widget.onTap();
+            },
+            onTapDown: _handleTapDown,
+            onTapUp: _handleTapUp,
+            onTapCancel: _handleTapCancel,
+            borderRadius: widget.borderRadius,
+            splashColor:
+                widget.splashColor ?? theme.primaryColor.withOpacity(0.1),
+            highlightColor:
+                widget.highlightColor ?? theme.primaryColor.withOpacity(0.05),
+            child: Ink(
+              padding: widget.padding,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: widget.borderRadius,
+                boxShadow: _isPressed ? [_pressedShadow] : null,
+              ),
+              child: widget.child,
             ),
-            child: widget.child,
           ),
         ),
       ),

@@ -45,8 +45,8 @@ class ShareUtils {
         showStreak: showStreak,
       );
 
-      // Convert boundary to image
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      // Convert boundary to image with lower pixel ratio to reduce memory usage
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
@@ -105,8 +105,8 @@ class ShareUtils {
       final RenderRepaintBoundary boundary =
           await _generateHabitSummaryImage(context, habit);
 
-      // Convert boundary to image
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      // Convert boundary to image with lower pixel ratio to reduce memory usage
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
@@ -196,6 +196,10 @@ class ShareUtils {
       }
     });
 
+    // Use a smaller size for the image to reduce memory usage
+    final width = 810; // 75% of original 1080
+    final height = 1440; // 75% of original 1920
+
     // Insert the widget into the widget tree briefly to render it
     final overlayState = Overlay.of(context);
     final overlayEntry = OverlayEntry(
@@ -208,21 +212,22 @@ class ShareUtils {
             child: Material(
               color: Colors.transparent,
               child: Container(
-                width: 1080,
-                height: 1920,
+                width: width.toDouble(),
+                height: height.toDouble(),
                 color: color, // Use habit color as background
-                padding: const EdgeInsets.all(40),
+                padding: const EdgeInsets.all(30), // Reduced padding
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius:
+                            BorderRadius.circular(20), // Smaller radius
                       ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 40,
+                        horizontal: 30, // Reduced padding
+                        vertical: 30, // Reduced padding
                       ),
                       child: Column(
                         children: [
@@ -231,19 +236,20 @@ class ShareUtils {
                             children: [
                               // Icon container
                               Container(
-                                height: 100,
-                                width: 100,
+                                height: 80, // Smaller size
+                                width: 80, // Smaller size
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(
+                                      20), // Smaller radius
                                 ),
                                 child: Icon(
                                   IconUtils.getIconData(habit.iconName),
                                   color: Colors.white,
-                                  size: 60,
+                                  size: 48, // Smaller icon
                                 ),
                               ),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 20), // Smaller spacing
                               // Habit details
                               Expanded(
                                 child: Column(
@@ -345,18 +351,12 @@ class ShareUtils {
       },
     );
 
+    // Add to overlay and wait for rendering
     overlayState.insert(overlayEntry);
+    final boundary = await completer.future;
+    overlayEntry.remove();
 
-    // Wait for the rendering to complete
-    try {
-      final boundary = await completer.future;
-      // Remove the widget once we're done
-      overlayEntry.remove();
-      return boundary;
-    } catch (e) {
-      overlayEntry.remove();
-      rethrow;
-    }
+    return boundary;
   }
 
   // Build a streak grid similar to HabitKit for sharing

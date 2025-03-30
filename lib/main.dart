@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart'; // Added for performance optimization
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'models/habits_provider.dart';
 import 'models/theme_provider.dart';
 import 'models/notification_manager.dart';
+import 'services/habit_database.dart';
 import 'services/premium_service.dart';
 import 'services/purchase_service.dart';
 import 'services/ad_service.dart';
@@ -12,12 +17,52 @@ import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Optimize rendering performance
+  // Disable the error reporting overlay which can cause rendering issues
+  ErrorWidget.builder = (FlutterErrorDetails details) => Container();
+
+  // Fix orientation to portrait only to avoid expensive rebuilds
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Initialize ad service
   await AdService().initialize();
 
-  runApp(const MyApp());
+  // Open the database
+  final appDocDir = await getApplicationDocumentsDirectory();
+  final database = HabitDatabase(appDocDir.path);
+  await database.open();
+
+  // Initialize shared preferences for theme and settings
+  final prefs = await SharedPreferences.getInstance();
+
+  // Initialize purchase service
+  final purchaseService = PurchaseService();
+
+  // Initialize premium service
+  final premiumService = PremiumService(prefs, purchaseService);
+  await premiumService.initialize();
+
+  // Initialize ad service
+  final adService = AdService(premiumService);
+  await adService.initialize();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (_) => ThemeProvider(prefs),
+        ),
+        Provider<HabitDatabase>.value(value: database),
+        Provider<PurchaseService>.value(value: purchaseService),
+        ChangeNotifierProvider<PremiumService>.value(value: premiumService),
+        Provider<AdService>.value(value: adService),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

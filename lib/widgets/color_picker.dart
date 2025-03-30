@@ -18,28 +18,30 @@ class ColorPicker extends StatelessWidget {
     final borderColor = isDarkMode ? Colors.white : Colors.black;
     final checkColor = isDarkMode ? Colors.white : Colors.white;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Wrap(
-        spacing: 12.0,
-        runSpacing: 12.0,
-        children: AppTheme.themeColors.map((color) {
-          final isSelected = color.value == selectedColor.value;
-          // Check if the color is light
-          final isLightColor = color.computeLuminance() > 0.5;
-          final iconColor = isLightColor ? Colors.black : Colors.white;
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Wrap(
+          spacing: 12.0,
+          runSpacing: 12.0,
+          children: AppTheme.themeColors.map((color) {
+            final isSelected = color.value == selectedColor.value;
+            // Check if the color is light
+            final isLightColor = color.computeLuminance() > 0.5;
+            final iconColor = isLightColor ? Colors.black : Colors.white;
 
-          return _ColorOption(
-            color: color,
-            isSelected: isSelected,
-            iconColor: iconColor,
-            borderColor: borderColor,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onColorSelected(color);
-            },
-          );
-        }).toList(),
+            return _ColorOption(
+              color: color,
+              isSelected: isSelected,
+              iconColor: iconColor,
+              borderColor: borderColor,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onColorSelected(color);
+              },
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -70,6 +72,9 @@ class _ColorOptionState extends State<_ColorOption>
   late Animation<double> _scaleAnimation;
   bool _isPressed = false;
 
+  // Precalculated shadow
+  late BoxShadow _selectedShadow;
+
   @override
   void initState() {
     super.initState();
@@ -86,9 +91,19 @@ class _ColorOptionState extends State<_ColorOption>
     );
 
     if (widget.isSelected) {
-      _controller.value =
-          0.5; // Start halfway through the animation if selected
+      _controller.value = 0.5;
     }
+
+    // Create shadow based on color once
+    _updateShadow();
+  }
+
+  void _updateShadow() {
+    _selectedShadow = BoxShadow(
+      color: widget.color.withOpacity(0.7),
+      blurRadius: 12,
+      spreadRadius: 2,
+    );
   }
 
   @override
@@ -101,6 +116,10 @@ class _ColorOptionState extends State<_ColorOption>
         _controller.reverse();
       }
     }
+
+    if (widget.color != oldWidget.color) {
+      _updateShadow();
+    }
   }
 
   @override
@@ -111,73 +130,62 @@ class _ColorOptionState extends State<_ColorOption>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) {
-        setState(() {
-          _isPressed = true;
-        });
-        _controller.forward();
-      },
-      onTapUp: (_) {
-        setState(() {
-          _isPressed = false;
-        });
-        if (!widget.isSelected) {
-          _controller.reverse();
-        }
-      },
-      onTapCancel: () {
-        setState(() {
-          _isPressed = false;
-        });
-        if (!widget.isSelected) {
-          _controller.reverse();
-        }
-      },
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value + (widget.isSelected ? 0.1 : 0),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: widget.color,
-                shape: BoxShape.circle,
-                border: widget.isSelected
-                    ? Border.all(color: widget.borderColor, width: 3)
-                    : null,
-                boxShadow: [
-                  if (_isPressed || widget.isSelected)
-                    BoxShadow(
-                      color: widget.color.withOpacity(0.7),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                ],
-              ),
-              child: widget.isSelected
-                  ? TweenAnimationBuilder<double>(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.elasticOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: value,
-                          child: Icon(
-                            Icons.check,
-                            color: widget.iconColor,
-                            size: 24,
-                          ),
-                        );
-                      },
-                    )
-                  : null,
-            ),
-          );
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) {
+          setState(() {
+            _isPressed = true;
+          });
+          _controller.forward();
         },
+        onTapUp: (_) {
+          setState(() {
+            _isPressed = false;
+          });
+          if (!widget.isSelected) {
+            _controller.reverse();
+          }
+        },
+        onTapCancel: () {
+          setState(() {
+            _isPressed = false;
+          });
+          if (!widget.isSelected) {
+            _controller.reverse();
+          }
+        },
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value + (widget.isSelected ? 0.1 : 0),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
+                  border: widget.isSelected
+                      ? Border.all(color: widget.borderColor, width: 3)
+                      : null,
+                  boxShadow: (_isPressed || widget.isSelected)
+                      ? [_selectedShadow]
+                      : null,
+                ),
+                child: widget.isSelected
+                    ? Center(
+                        child: Icon(
+                          Icons.check,
+                          color: widget.iconColor,
+                          size: 24,
+                        ),
+                      )
+                    : null,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
