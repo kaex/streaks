@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../models/theme_provider.dart';
 import '../models/notification_manager.dart';
@@ -158,9 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.star,
             title: 'Rate App',
             subtitle: 'Leave a review on the app store',
-            onTap: () {
-              _showComingSoonDialog('Rate App');
-            },
+            onTap: _openRateApp,
           ),
 
           const Divider(),
@@ -171,16 +171,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.privacy_tip,
             title: 'Privacy Policy',
             subtitle: 'How we handle your data',
-            onTap: () {
-              context.openPrivacyPolicy();
+            onTap: () async {
+              await _launchUrl(
+                  'https://www.freeprivacypolicy.com/live/streaks');
             },
           ),
           _buildSettingItem(
             icon: Icons.description,
             title: 'Terms of Service',
             subtitle: 'Legal terms for using Streaks',
-            onTap: () {
-              context.openTermsOfService();
+            onTap: () async {
+              await _launchUrl(
+                  'https://www.termsandconditionsgenerator.com/live.php?token=streaks');
             },
           ),
 
@@ -263,6 +265,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _openRateApp() async {
+    final InAppReview inAppReview = InAppReview.instance;
+
+    try {
+      // Check if the device can open the in-app review dialog
+      if (await inAppReview.isAvailable()) {
+        // Request a review
+        await inAppReview.requestReview();
+      } else {
+        // If in-app review is not available, open the store listing
+        await inAppReview.openStoreListing(
+          appStoreId: '6473364753', // Your iOS App Store ID
+          microsoftStoreId: 'your-microsoft-store-id', // Optional
+        );
+      }
+    } catch (e) {
+      // Fallback to a thank you dialog in case of any errors
+      _showReviewFallbackDialog();
+    }
+  }
+
+  void _showReviewFallbackDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thank You!'),
+        content: const Text(
+          'Your feedback helps us improve Streaks. Thank you for taking the time to review our app!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showComingSoonDialog(String feature, [String? message]) {
     showDialog(
       context: context,
@@ -278,5 +319,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      // Show a snackbar if the URL couldn't be launched
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open $urlString')),
+        );
+      }
+    }
   }
 }

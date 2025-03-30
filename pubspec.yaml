@@ -65,6 +65,9 @@ dependencies:
   google_mobile_ads: ^4.0.0  # For banner ads
   in_app_purchase: ^3.1.13   # For in-app purchases
 
+  # In-app review
+  in_app_review: ^2.0.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
