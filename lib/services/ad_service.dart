@@ -3,7 +3,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
-import '../models/premium_provider.dart';
+import '../services/premium_service.dart';
 
 class AdService {
   static final AdService _instance = AdService._internal();
@@ -68,9 +68,9 @@ class AdService {
 
   // Widget to display banner ad if user is not premium
   static Widget showBannerAd(BuildContext context) {
-    final premiumProvider = Provider.of<PremiumProvider>(context);
+    final premiumService = Provider.of<PremiumService>(context);
 
-    if (premiumProvider.isPremium) {
+    if (premiumService.isPremium) {
       return const SizedBox.shrink(); // No ad for premium users
     }
 

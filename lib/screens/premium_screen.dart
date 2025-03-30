@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
-import '../models/premium_provider.dart';
+import '../services/premium_service.dart';
 import '../theme/app_theme.dart';
 
 class PremiumScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final premiumProvider = Provider.of<PremiumProvider>(context);
+    final premiumService = Provider.of<PremiumService>(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor =
         isDarkMode ? AppTheme.backgroundColor : AppTheme.lightBackgroundColor;
@@ -25,6 +25,12 @@ class _PremiumScreenState extends State<PremiumScreen> {
     final secondaryTextColor = isDarkMode
         ? AppTheme.secondaryTextColor
         : AppTheme.lightSecondaryTextColor;
+
+    // Get product price from the provider if available
+    String priceDisplay = 'Lifetime Access';
+    if (premiumService.products.isNotEmpty) {
+      priceDisplay = premiumService.products.first.price;
+    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -96,9 +102,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        '\$0.99',
-                        style: TextStyle(
+                      child: Text(
+                        priceDisplay,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -142,7 +148,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : premiumProvider.isPremium
+                  : premiumService.isPremium
                       ? Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
@@ -175,9 +181,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Upgrade Now',
-                            style: TextStyle(
+                          child: Text(
+                            premiumService.products.isNotEmpty
+                                ? 'Upgrade Now - ${premiumService.products.first.price}'
+                                : 'Upgrade Now',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -188,7 +196,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             const SizedBox(height: 16),
 
             // Restore purchases text button
-            if (!premiumProvider.isPremium)
+            if (!premiumService.isPremium)
               Center(
                 child: TextButton(
                   onPressed: () => _restorePurchases(context),
@@ -201,27 +209,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ),
                 ),
               ),
-
-            // For testing - toggle premium status
-            if (!premiumProvider.isPremium && kDebugMode)
-              Padding(
-                padding: const EdgeInsets.only(top: 16, bottom: 40),
-                child: Center(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      premiumProvider.togglePremiumStatus();
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                          color: AppTheme.accentColor.withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Toggle Premium (Debug)'),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -229,71 +216,95 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   List<Widget> _buildFeatures() {
-    final features = [
-      {
-        'icon': Icons.check_circle_outline,
-        'title': 'Unlimited Habits',
-        'description': 'Create as many habits as you need',
-      },
-      {
-        'icon': Icons.block,
-        'title': 'No Advertisements',
-        'description': 'Enjoy a clean, distraction-free experience',
-      },
-      {
-        'icon': Icons.favorite_outline,
-        'title': 'Support Development',
-        'description': 'Help us continue improving Streaks',
-      },
-    ];
+    final features = PremiumService.premiumFeatures.entries.map((entry) {
+      IconData icon;
+      switch (entry.key) {
+        case 'unlimited_habits':
+          icon = Icons.check_circle_outline;
+          break;
+        case 'ad_free_experience':
+          icon = Icons.block;
+          break;
+        case 'advanced_statistics':
+          icon = Icons.insights;
+          break;
+        case 'custom_themes':
+          icon = Icons.palette;
+          break;
+        default:
+          icon = Icons.star;
+      }
 
-    return features.map((feature) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.accentColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                feature['icon'] as IconData,
-                color: AppTheme.accentColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    feature['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    feature['description'] as String,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppTheme.secondaryTextColor
-                          : AppTheme.lightSecondaryTextColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      return _buildFeatureItem(
+        icon: icon,
+        title: entry.key
+            .split('_')
+            .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+            .join(' '),
+        description: entry.value,
       );
     }).toList();
+
+    // Add support development feature
+    features.add(_buildFeatureItem(
+      icon: Icons.favorite_outline,
+      title: 'Support Development',
+      description: 'Help us continue improving the app',
+    ));
+
+    return features;
+  }
+
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: AppTheme.accentColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.secondaryTextColor
+                        : AppTheme.lightSecondaryTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _purchasePremium(BuildContext context) async {
@@ -302,15 +313,16 @@ class _PremiumScreenState extends State<PremiumScreen> {
     });
 
     try {
-      final premiumProvider =
-          Provider.of<PremiumProvider>(context, listen: false);
-      await premiumProvider.buyPremium();
+      final premiumService =
+          Provider.of<PremiumService>(context, listen: false);
+      final success = await premiumService.upgradeToPremium();
 
-      if (premiumProvider.isPremium) {
+      if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Thank you for purchasing Premium!'),
-            backgroundColor: Colors.green,
+            content: Text(
+                'Purchase could not be initiated. Please try again later.'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -334,21 +346,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
     });
 
     try {
-      final premiumProvider =
-          Provider.of<PremiumProvider>(context, listen: false);
-      await premiumProvider.restorePurchases();
+      final premiumService =
+          Provider.of<PremiumService>(context, listen: false);
+      final success = await premiumService.restorePurchases();
 
-      if (premiumProvider.isPremium) {
+      // Don't show success message here - premium service will update automatically
+      // if restored purchases are found via the purchase listener
+      if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Premium restored successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No purchases to restore.'),
+            content:
+                Text('Could not restore purchases. Please try again later.'),
+            backgroundColor: Colors.orange,
           ),
         );
       }

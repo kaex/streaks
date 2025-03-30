@@ -4,7 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import '../models/theme_provider.dart';
 import '../models/notification_manager.dart';
-import '../models/premium_provider.dart';
+import '../services/premium_service.dart';
 import '../utils/webview_utils.dart';
 import 'notification_settings_screen.dart';
 import 'premium_screen.dart';
@@ -23,7 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final notificationManager = Provider.of<NotificationManager>(context);
-    final premiumProvider = Provider.of<PremiumProvider>(context);
+    final premiumService = Provider.of<PremiumService>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
 
           // Premium Status Banner
-          if (premiumProvider.isPremium)
+          if (premiumService.isPremium)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               padding: const EdgeInsets.all(16),
@@ -92,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
           // Premium Option (for non-premium users)
-          if (!premiumProvider.isPremium)
+          if (!premiumService.isPremium)
             _buildSettingItem(
               icon: Icons.stars,
               title: 'Upgrade to Premium',

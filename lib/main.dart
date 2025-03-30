@@ -4,7 +4,8 @@ import 'package:share_plus/share_plus.dart';
 import 'models/habits_provider.dart';
 import 'models/theme_provider.dart';
 import 'models/notification_manager.dart';
-import 'models/premium_provider.dart';
+import 'services/premium_service.dart';
+import 'services/purchase_service.dart';
 import 'services/ad_service.dart';
 import 'screens/habits_screen.dart';
 import 'screens/settings_screen.dart';
@@ -29,7 +30,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => HabitsProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => NotificationManager()),
-        ChangeNotifierProvider(create: (context) => PremiumProvider()),
+        Provider<PurchaseService>(create: (context) => PurchaseService()),
+        ChangeNotifierProxyProvider<PurchaseService, PremiumService>(
+          create: (context) => PremiumService(
+              Provider.of<PurchaseService>(context, listen: false)),
+          update: (context, purchaseService, previousPremiumService) =>
+              previousPremiumService ?? PremiumService(purchaseService),
+        ),
       ],
       child: Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
         return FutureBuilder<void>(

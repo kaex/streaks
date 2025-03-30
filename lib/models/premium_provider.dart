@@ -1,18 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'dart:async';
 
 class PremiumProvider with ChangeNotifier {
   bool _isPremium = false;
   bool _isLoading = true;
+  bool _isPurchasePending = false;
   static const String _premiumStatusKey = 'isPremiumUser';
-  static const String _productId = 'streaks_premium_unlimited';
+  static const String _productId = 'lifetime_premium';
   static const int _freeHabitLimit = 3;
 
   // In-app purchase variables
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   List<ProductDetails> _products = [];
   bool _isAvailable = false;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
 
   PremiumProvider() {
     _loadPremiumStatus();
@@ -21,6 +24,7 @@ class PremiumProvider with ChangeNotifier {
 
   bool get isPremium => _isPremium;
   bool get isLoading => _isLoading;
+  bool get isPurchasePending => _isPurchasePending;
   int get freeHabitLimit => _freeHabitLimit;
   List<ProductDetails> get products => _products;
   bool get isStoreAvailable => _isAvailable;
@@ -35,6 +39,7 @@ class PremiumProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isPremium = prefs.getBool(_premiumStatusKey) ?? false;
+      print('Premium status loaded: $_isPremium');
     } catch (e) {
       print('Error loading premium status: $e');
     } finally {
@@ -47,6 +52,7 @@ class PremiumProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_premiumStatusKey, _isPremium);
+      print('Premium status saved: $_isPremium');
     } catch (e) {
       print('Error saving premium status: $e');
     }
@@ -56,6 +62,7 @@ class PremiumProvider with ChangeNotifier {
   Future<void> _initInAppPurchase() async {
     final bool available = await _inAppPurchase.isAvailable();
     _isAvailable = available;
+    print('In-app purchase available: $available');
 
     if (available) {
       await _loadProducts();
@@ -64,9 +71,17 @@ class PremiumProvider with ChangeNotifier {
       final Stream<List<PurchaseDetails>> purchaseUpdated =
           _inAppPurchase.purchaseStream;
 
-      purchaseUpdated.listen((purchaseDetailsList) {
-        _listenToPurchaseUpdated(purchaseDetailsList);
-      });
+      _subscription = purchaseUpdated.listen(
+        _listenToPurchaseUpdated,
+        onDone: () {
+          _subscription?.cancel();
+        },
+        onError: (error) {
+          print('Purchase stream error: $error');
+        },
+      );
+    } else {
+      print('In-app purchase not available');
     }
 
     notifyListeners();
@@ -82,6 +97,14 @@ class PremiumProvider with ChangeNotifier {
       }
 
       _products = response.productDetails;
+
+      if (_products.isNotEmpty) {
+        print(
+            'Product loaded: ${_products.first.id} - ${_products.first.title} - ${_products.first.price}');
+      } else {
+        print('No products available');
+      }
+
       notifyListeners();
     } catch (e) {
       print('Error loading products: $e');
@@ -90,36 +113,59 @@ class PremiumProvider with ChangeNotifier {
 
   Future<void> buyPremium() async {
     if (_products.isEmpty) {
-      print('No products available');
+      print('No products available for purchase');
       return;
     }
 
     try {
+      _isPurchasePending = true;
+      notifyListeners();
+
       final ProductDetails productDetails = _products.first;
+      print(
+          'Purchasing product: ${productDetails.id} - ${productDetails.price}');
+
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: productDetails,
+        applicationUserName: null,
       );
 
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
+      _isPurchasePending = false;
+      notifyListeners();
       print('Error purchasing premium: $e');
+      rethrow; // Allow UI to handle the error
     }
   }
 
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        // Show a loading UI
-      } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-          purchaseDetails.status == PurchaseStatus.restored) {
-        // Handle successful purchase
-        _setPremium(true);
-      } else if (purchaseDetails.status == PurchaseStatus.error) {
-        print('Error purchasing: ${purchaseDetails.error}');
-      }
+    print('Purchase updated: ${purchaseDetailsList.length} purchases');
 
-      if (purchaseDetails.pendingCompletePurchase) {
-        _inAppPurchase.completePurchase(purchaseDetails);
+    for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
+      print(
+          'Purchase status: ${purchaseDetails.status} for ${purchaseDetails.productID}');
+
+      if (purchaseDetails.status == PurchaseStatus.pending) {
+        _isPurchasePending = true;
+        notifyListeners();
+      } else {
+        _isPurchasePending = false;
+
+        if (purchaseDetails.status == PurchaseStatus.purchased ||
+            purchaseDetails.status == PurchaseStatus.restored) {
+          print('Purchase successful or restored');
+          _setPremium(true);
+        } else if (purchaseDetails.status == PurchaseStatus.error) {
+          print('Error purchasing: ${purchaseDetails.error?.message}');
+        }
+
+        if (purchaseDetails.pendingCompletePurchase) {
+          print('Completing purchase');
+          _inAppPurchase.completePurchase(purchaseDetails);
+        }
+
+        notifyListeners();
       }
     }
   }
@@ -138,6 +184,18 @@ class PremiumProvider with ChangeNotifier {
 
   // Restore purchases from the store
   Future<void> restorePurchases() async {
-    await _inAppPurchase.restorePurchases();
+    print('Attempting to restore purchases');
+    try {
+      await _inAppPurchase.restorePurchases();
+    } catch (e) {
+      print('Error restoring purchases: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

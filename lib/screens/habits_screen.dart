@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
 import '../models/habits_provider.dart';
-import '../models/premium_provider.dart';
+import '../services/premium_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/category_chip.dart';
@@ -29,7 +29,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor =
         isDarkMode ? const Color(0xFF151515) : const Color(0xFFEEEEEE);
-    final premiumProvider = Provider.of<PremiumProvider>(context);
+    final premiumService = Provider.of<PremiumService>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -114,7 +114,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
           ),
 
           // Ad banner at the bottom (only for free users)
-          if (!premiumProvider.isPremium) AdService.showBannerAd(context),
+          if (!premiumService.isPremium) AdService.showBannerAd(context),
         ],
       ),
       // Functional bottom navigation bar
