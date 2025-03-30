@@ -153,13 +153,13 @@ class _HabitsScreenState extends State<HabitsScreen> {
   Widget _getScreenForIndex(int index) {
     switch (index) {
       case 0:
-        return const HabitsListView();
+        return _HabitsScreenContent(); // Grid view (default)
       case 1:
         return const HabitsListView();
       case 2:
         return const HabitsDetailsView();
       default:
-        return const HabitsListView();
+        return _HabitsScreenContent();
     }
   }
 
@@ -286,6 +286,225 @@ class _HabitsScreenState extends State<HabitsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HabitsScreenContent extends StatefulWidget {
+  @override
+  State<_HabitsScreenContent> createState() => _HabitsScreenContentState();
+}
+
+class _HabitsScreenContentState extends State<_HabitsScreenContent> {
+  String _selectedCategory = 'All';
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<HabitsProvider>(
+      builder: (context, habitsProvider, child) {
+        if (habitsProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final allHabits = habitsProvider.habits;
+        final filteredHabits = _selectedCategory == 'All'
+            ? allHabits
+            : allHabits.where((habit) {
+                return habit.categories != null &&
+                    habit.categories!.contains(_selectedCategory);
+              }).toList();
+
+        if (allHabits.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 80,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No habits yet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap the + button to add your first habit',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: 300,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NewHabitScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    child: const Text(
+                      'Create Habit',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Get all unique categories from habits
+        final Set<String> categories = {'All'};
+        for (var habit in allHabits) {
+          if (habit.categories != null) {
+            categories.addAll(habit.categories!);
+          }
+        }
+
+        // Show categories filter chip
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Category filter
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: categories.map((category) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: CategoryChip(
+                        label: category,
+                        isSelected: _selectedCategory == category,
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            // Habits list
+            Expanded(
+              child: AnimationLimiter(
+                child: filteredHabits.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No habits in this category',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 100),
+                        itemCount: filteredHabits.length,
+                        itemBuilder: (context, index) {
+                          final habit = filteredHabits[index];
+                          return AnimationConfiguration.staggeredList(
+                            position: index,
+                            duration: const Duration(milliseconds: 375),
+                            child: SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(
+                                child: HabitCard(
+                                  habit: habit,
+                                  onToggleCompletion: (habitId) {
+                                    habitsProvider
+                                        .toggleHabitCompletion(habitId);
+                                  },
+                                  onTap: (habitId) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            HabitDetailsScreen(
+                                                habitId: habitId),
+                                      ),
+                                    );
+                                  },
+                                  onDelete: (habitId) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Delete Habit'),
+                                          content: const Text(
+                                            'Are you sure you want to delete this habit? This action cannot be undone.',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                habitsProvider
+                                                    .deleteHabit(habitId);
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  onEdit: (habitId) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            NewHabitScreen(habitId: habitId),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
