@@ -131,7 +131,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.black : Colors.white,
+                color: isDarkMode ? Color(0xFF1A1A1A) : Colors.white,
                 borderRadius: BorderRadius.circular(32),
                 boxShadow: [
                   if (!isDarkMode)
@@ -185,17 +185,16 @@ class _HabitsScreenState extends State<HabitsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? (isDarkMode ? Colors.grey[850] : Colors.grey[200])
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
+          color: isSelected ? AppTheme.accentColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
           color: isSelected
-              ? AppTheme.accentColor
-              : (isDarkMode ? Colors.grey[500] : Colors.grey[600]),
-          size: 24,
+              ? Colors.white
+              : isDarkMode
+                  ? Colors.grey[500]
+                  : Colors.grey[700],
         ),
       ),
     );
