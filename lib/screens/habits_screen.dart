@@ -153,13 +153,13 @@ class _HabitsScreenState extends State<HabitsScreen> {
   Widget _getScreenForIndex(int index) {
     switch (index) {
       case 0:
-        return const _HabitsGridView();
+        return const HabitsListView();
       case 1:
         return const HabitsListView();
       case 2:
         return const HabitsDetailsView();
       default:
-        return const _HabitsGridView();
+        return const HabitsListView();
     }
   }
 
