@@ -308,11 +308,8 @@ class HabitDetailsScreen extends StatelessWidget {
                             child: HighlightCard(
                               title: 'Current Streak',
                               value: '${habit.currentStreak}',
-                              leading: Icon(
-                                Icons.local_fire_department,
-                                color: habit.color,
-                                size: 24,
-                              ),
+                              icon: Icons.local_fire_department,
+                              color: habit.color,
                             ),
                           ),
                           const SizedBox(width: 6), // Reduced spacing
@@ -321,11 +318,8 @@ class HabitDetailsScreen extends StatelessWidget {
                             child: HighlightCard(
                               title: 'Best Streak',
                               value: '${habit.bestStreak}',
-                              leading: Icon(
-                                Icons.emoji_events,
-                                color: habit.color,
-                                size: 24,
-                              ),
+                              icon: Icons.emoji_events,
+                              color: habit.color,
                             ),
                           ),
                         ],
@@ -338,11 +332,8 @@ class HabitDetailsScreen extends StatelessWidget {
                             child: HighlightCard(
                               title: 'Completion',
                               value: '${habit.totalCompletions}',
-                              leading: Icon(
-                                Icons.check_rounded,
-                                color: habit.color,
-                                size: 24,
-                              ),
+                              icon: Icons.check_rounded,
+                              color: habit.color,
                             ),
                           ),
                           const SizedBox(width: 6), // Reduced spacing
@@ -351,11 +342,8 @@ class HabitDetailsScreen extends StatelessWidget {
                             child: HighlightCard(
                               title: 'Streak Goal',
                               value: 'Daily',
-                              leading: Icon(
-                                Icons.track_changes,
-                                color: habit.color,
-                                size: 24,
-                              ),
+                              icon: Icons.track_changes,
+                              color: habit.color,
                             ),
                           ),
                         ],
@@ -366,18 +354,9 @@ class HabitDetailsScreen extends StatelessWidget {
 
                 // Progress Chart
                 const SizedBox(height: 6),
-                Container(
-                  height: 280, // Ensure container has a fixed height
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ProgressChart(
-                    habits: [habit],
-                    dates: List.generate(
-                      30,
-                      (index) =>
-                          DateTime.now().subtract(Duration(days: 29 - index)),
-                    ),
-                    habitId: habit.id,
-                  ),
+                  child: ProgressChart(habit: habit),
                 ),
 
                 const SizedBox(height: 40),
