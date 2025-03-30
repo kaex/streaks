@@ -37,10 +37,19 @@ class _PremiumScreenState extends State<PremiumScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Premium',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
       ),
       body: SingleChildScrollView(

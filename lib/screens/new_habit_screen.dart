@@ -116,6 +116,8 @@ class _NewHabitScreenState extends State<NewHabitScreen> {
       backgroundColor: scaffoldBgColor,
       appBar: AppBar(
         backgroundColor: scaffoldBgColor,
+        scrolledUnderElevation: 0,
+        elevation: 0,
         title: Text(
           _isEditing ? 'Edit Habit' : 'New Habit',
           style: TextStyle(

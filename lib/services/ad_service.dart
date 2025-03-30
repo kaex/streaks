@@ -74,22 +74,57 @@ class AdService {
       return const SizedBox.shrink(); // No ad for premium users
     }
 
-    return FutureBuilder<void>(
-      future: AdService().initialize(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          final BannerAd bannerAd = AdService().createBannerAd();
-          bannerAd.load();
+    // Use RepaintBoundary to prevent this widget from causing parent rebuilds
+    return RepaintBoundary(
+      child: FutureBuilder<void>(
+        future: AdService().initialize(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return _BannerAdWidget();
+          } else {
+            return const SizedBox(height: 50); // Placeholder while loading
+          }
+        },
+      ),
+    );
+  }
+}
 
-          return Container(
-            height: 50, // Standard banner height
-            alignment: Alignment.center,
-            child: AdWidget(ad: bannerAd),
-          );
-        } else {
-          return const SizedBox(height: 50); // Placeholder while loading
-        }
-      },
+// Create a stateful widget for banner ad to prevent memory leaks
+class _BannerAdWidget extends StatefulWidget {
+  @override
+  State<_BannerAdWidget> createState() => _BannerAdWidgetState();
+}
+
+class _BannerAdWidgetState extends State<_BannerAdWidget> {
+  BannerAd? _bannerAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAd();
+  }
+
+  void _loadAd() {
+    _bannerAd = AdService().createBannerAd()..load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_bannerAd == null) {
+      return const SizedBox(height: 50);
+    }
+
+    return Container(
+      height: 50, // Standard banner height
+      alignment: Alignment.center,
+      child: AdWidget(ad: _bannerAd!),
     );
   }
 }

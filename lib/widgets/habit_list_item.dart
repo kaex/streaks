@@ -345,13 +345,16 @@ class _AnimatedCompletionButtonState extends State<AnimatedCompletionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  // Cache shadow to avoid recreating it on every frame
+  late final BoxShadow _completedShadow;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      // Reduce duration to make animations snappier
+      duration: const Duration(milliseconds: 150),
     );
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
@@ -364,6 +367,13 @@ class _AnimatedCompletionButtonState extends State<AnimatedCompletionButton>
     if (widget.isCompleted) {
       _animationController.value = 1.0;
     }
+
+    // Create shadow only once
+    _completedShadow = BoxShadow(
+      color: widget.color.withOpacity(0.4),
+      blurRadius: 4,
+      spreadRadius: 1,
+    );
   }
 
   @override
@@ -387,39 +397,34 @@ class _AnimatedCompletionButtonState extends State<AnimatedCompletionButton>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: 1.0 - (_scaleAnimation.value * 0.1),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: widget.isCompleted ? widget.color : widget.defaultColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: widget.isCompleted
-                    ? [
-                        BoxShadow(
-                          color: widget.color.withOpacity(0.4),
-                          blurRadius: 4,
-                          spreadRadius: 1,
-                        )
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.check,
-                  color: widget.isCompleted ? Colors.white : Colors.grey[600],
-                  size: 20,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1.0 - (_scaleAnimation.value * 0.1),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color:
+                      widget.isCompleted ? widget.color : widget.defaultColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  boxShadow: widget.isCompleted ? [_completedShadow] : null,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.check,
+                    color: widget.isCompleted ? Colors.white : Colors.grey[600],
+                    size: 20,
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

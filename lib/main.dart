@@ -90,8 +90,16 @@ class MyApp extends StatelessWidget {
             return MaterialApp(
               title: 'Streaks',
               debugShowCheckedModeBanner: false,
-              theme: AppTheme.lightTheme(),
-              darkTheme: AppTheme.darkTheme(),
+              theme: AppTheme.lightTheme().copyWith(
+                appBarTheme: AppTheme.lightTheme().appBarTheme.copyWith(
+                      scrolledUnderElevation: 0,
+                    ),
+              ),
+              darkTheme: AppTheme.darkTheme().copyWith(
+                appBarTheme: AppTheme.darkTheme().appBarTheme.copyWith(
+                      scrolledUnderElevation: 0,
+                    ),
+              ),
               themeMode: themeProvider.themeMode,
               home: const HabitsScreen(), // Use home instead of initialRoute
               routes: {

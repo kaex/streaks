@@ -21,12 +21,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        isDarkMode ? Colors.black : AppTheme.lightBackgroundColor;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+
     final themeProvider = Provider.of<ThemeProvider>(context);
     final notificationManager = Provider.of<NotificationManager>(context);
     final premiumService = Provider.of<PremiumService>(context);
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: backgroundColor,
+        scrolledUnderElevation: 0, // Prevent color change when scrolling
+        elevation: 0,
         title: const Text('Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

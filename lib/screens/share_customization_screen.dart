@@ -108,9 +108,12 @@ class _ShareCustomizationScreenState extends State<ShareCustomizationScreen> {
     return Scaffold(
       backgroundColor: scaffoldBgColor,
       appBar: AppBar(
-        backgroundColor: scaffoldBgColor,
+        backgroundColor:
+            isDarkMode ? Colors.black : AppTheme.lightBackgroundColor,
+        scrolledUnderElevation: 0, // Prevent color change when scrolling
+        elevation: 0,
         title: Text(
-          'Share Habit',
+          'Share',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

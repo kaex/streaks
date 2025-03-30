@@ -10,6 +10,7 @@ class HabitsProvider with ChangeNotifier {
   List<Habit> _habits = [];
   static const String _prefsKey = 'habits';
   bool _isLoading = true;
+  SharedPreferences? _prefs; // Cache SharedPreferences instance
 
   HabitsProvider() {
     _loadHabits();
@@ -20,16 +21,17 @@ class HabitsProvider with ChangeNotifier {
 
   Future<void> _loadHabits() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final habitsJson = prefs.getStringList(_prefsKey);
+      _prefs = await SharedPreferences.getInstance();
+      final habitsJson = _prefs!.getStringList(_prefsKey);
 
       if (habitsJson != null) {
+        // Parse habits in a batch to improve performance
         _habits = habitsJson
             .map((habitJson) => Habit.fromJson(jsonDecode(habitJson)))
             .toList();
       }
     } catch (e) {
-      print('Error loading habits: $e');
+      debugPrint('Error loading habits: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -38,12 +40,16 @@ class HabitsProvider with ChangeNotifier {
 
   Future<void> _saveHabits() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+
+      // Encode habits in a batch
       final habitsJson =
           _habits.map((habit) => jsonEncode(habit.toJson())).toList();
-      await prefs.setStringList(_prefsKey, habitsJson);
+      await _prefs!.setStringList(_prefsKey, habitsJson);
     } catch (e) {
-      print('Error saving habits: $e');
+      debugPrint('Error saving habits: $e');
     }
   }
 
@@ -59,7 +65,6 @@ class HabitsProvider with ChangeNotifier {
 
       // Check if user can add more habits
       if (!premiumService.canAddMoreHabits(_habits.length)) {
-        // Cannot add more habits as a free user
         throw Exception(
             'Free users can only create ${PremiumService.maxFreeHabits} habits. Upgrade to premium for unlimited habits.');
       }
@@ -120,7 +125,9 @@ class HabitsProvider with ChangeNotifier {
 
       _habits[index] = habit.copyWith(completionDates: completionDates);
       notifyListeners();
-      await _saveHabits();
+
+      // Use Future.microtask to allow UI to update before saving
+      Future.microtask(() => _saveHabits());
     }
   }
 

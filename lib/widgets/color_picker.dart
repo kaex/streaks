@@ -31,6 +31,7 @@ class ColorPicker extends StatelessWidget {
             final iconColor = isLightColor ? Colors.black : Colors.white;
 
             return _ColorOption(
+              key: ValueKey(color.value),
               color: color,
               isSelected: isSelected,
               iconColor: iconColor,
@@ -53,14 +54,16 @@ class _ColorOption extends StatefulWidget {
   final Color iconColor;
   final Color borderColor;
   final VoidCallback onTap;
+  final Key? key;
 
   const _ColorOption({
+    this.key,
     required this.color,
     required this.isSelected,
     required this.iconColor,
     required this.borderColor,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   State<_ColorOption> createState() => _ColorOptionState();
@@ -79,7 +82,7 @@ class _ColorOptionState extends State<_ColorOption>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 100),
       vsync: this,
     );
 
@@ -94,7 +97,7 @@ class _ColorOptionState extends State<_ColorOption>
       _controller.value = 0.5;
     }
 
-    // Create shadow based on color once
+    // Create shadow only once
     _updateShadow();
   }
 
