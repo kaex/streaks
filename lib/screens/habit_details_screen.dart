@@ -366,7 +366,8 @@ class HabitDetailsScreen extends StatelessWidget {
 
                 // Progress Chart
                 const SizedBox(height: 6),
-                Padding(
+                Container(
+                  height: 280, // Ensure container has a fixed height
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ProgressChart(
                     habits: [habit],

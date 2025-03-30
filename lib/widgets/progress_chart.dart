@@ -101,106 +101,110 @@ class _ProgressChartState extends State<ProgressChart> {
     return RepaintBoundary(
       child: Padding(
         padding: const EdgeInsets.only(right: 16, top: 16),
-        child: LineChart(
-          LineChartData(
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: 1,
-              getDrawingHorizontalLine: (value) {
-                return FlLine(
-                  color: isDarkMode ? Colors.white10 : Colors.black12,
-                  strokeWidth: 1,
-                );
-              },
-            ),
-            titlesData: FlTitlesData(
-              show: true,
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
+        child: SizedBox(
+          height: 250, // Set fixed height to avoid constraint issues
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 1,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: isDarkMode ? Colors.white10 : Colors.black12,
+                    strokeWidth: 1,
+                  );
+                },
               ),
-              topTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 30,
-                  interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    if (value.toInt() < 0 ||
-                        value.toInt() >= widget.dates.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final date = widget.dates[value.toInt()];
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        DateFormat('d').format(date),
+              titlesData: FlTitlesData(
+                show: true,
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < 0 ||
+                          value.toInt() >= widget.dates.length) {
+                        return const SizedBox.shrink();
+                      }
+                      final date = widget.dates[value.toInt()];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          DateFormat('d').format(date),
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 1,
+                    reservedSize:
+                        40, // Move this before getTitlesWidget for consistency
+                    getTitlesWidget: (value, meta) {
+                      if (value == 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Text(
+                        value.toInt().toString(),
                         style: TextStyle(
                           color: textColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    if (value == 0) {
-                      return const SizedBox.shrink();
-                    }
-                    return Text(
-                      value.toInt().toString(),
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    );
-                  },
-                  reservedSize: 40,
-                ),
+              borderData: FlBorderData(
+                show: false,
               ),
+              minX: 0,
+              maxX: (widget.dates.length - 1).toDouble(),
+              minY: 0,
+              maxY: _maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: _spots,
+                  isCurved: true,
+                  color: _lineColor,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 4,
+                        color: _lineColor,
+                        strokeWidth: 1,
+                        strokeColor: AppThemeExtension.isDarkMode(context)
+                            ? Colors.black
+                            : Colors.white,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: _lineColor.withOpacity(0.2),
+                  ),
+                ),
+              ],
             ),
-            borderData: FlBorderData(
-              show: false,
-            ),
-            minX: 0,
-            maxX: (widget.dates.length - 1).toDouble(),
-            minY: 0,
-            maxY: _maxY,
-            lineBarsData: [
-              LineChartBarData(
-                spots: _spots,
-                isCurved: true,
-                color: _lineColor,
-                barWidth: 3,
-                isStrokeCapRound: true,
-                dotData: FlDotData(
-                  show: true,
-                  getDotPainter: (spot, percent, barData, index) {
-                    return FlDotCirclePainter(
-                      radius: 4,
-                      color: _lineColor,
-                      strokeWidth: 1,
-                      strokeColor: AppThemeExtension.isDarkMode(context)
-                          ? Colors.black
-                          : Colors.white,
-                    );
-                  },
-                ),
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: _lineColor.withOpacity(0.2),
-                ),
-              ),
-            ],
           ),
         ),
       ),
